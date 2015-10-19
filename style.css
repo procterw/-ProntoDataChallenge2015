@@ -1,0 +1,46 @@
+body, html {
+	height: 100%;
+	/*padding: 10px;*/
+	margin: 0;
+	background-color: #EDEDED;
+	font-family: helvetica;
+}
+
+h2, h3 {
+	margin: 0;
+}
+
+.night, .day {
+	height: 100%;
+}
+
+.night {
+	background-color: #333333;
+	color: white;
+}
+
+.day {
+	background-color: #EDEDED;
+}
+
+.canvas-wrapper {
+	width: 600px;
+	height: 600px;
+	margin: 0 auto;
+	position: relative;
+	/*box-shadow: 0 0 5px 1px rgba(0,0,0,0.15);*/
+}
+
+.canvas,
+.canvas-background {
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	position: absolute;
+}
+
+.canvas-background img {
+	width: 100%;
+	height: 100%;
+}

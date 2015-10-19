@@ -21,7 +21,7 @@ convertToUnixTime <- function(time, format="%m-%d-%Y %H:%M:%S") {
 ####################
 
 # For this project we don't need any of this data
-unwantedColnames <- c("trip_id", "to_station_name","from_station_name","bikeid","tripduration","birthyear")
+unwantedColnames <- c("trip_id", "to_station_name","from_station_name","bikeid","birthyear")
 trips <- trips[!(names(trips) %in% unwantedColnames)]
 
 # These names can be shortened
@@ -35,7 +35,9 @@ since1970 <- as.POSIXct("1970-1-1 00:00:00")
 
 trips$starttime <- unlist(lapply(trips$startime, convertToUnixTime))
 trips$stoptime <- unlist(lapply(trips$stoptime, convertToUnixTime))
+trips$tripduration <- trips$tripduration / 60
 
+test <- 
 
 write.csv(trips, "open_data_year_one/cleaned/trips.csv")
 
