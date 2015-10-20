@@ -38,7 +38,7 @@ trips$starttime <- unlist(lapply(trips$startime, convertToUnixTime))
 trips$stoptime <- unlist(lapply(trips$stoptime, convertToUnixTime))
 trips$tripduration <- trips$tripduration / 60
 
-write.csv(trips, "open_data_year_one/cleaned/trips.csv", row.names=FALSE)
+write.csv(trips, "clean_data/trips.csv", row.names=FALSE)
 
 
 ####################
@@ -49,13 +49,13 @@ wantedColnames <- c("Date", "Mean_Temperature_F","Max_Wind_Speed_MPH","Mean_Wind
 weather <- weather[(names(weather) %in% wantedColnames)]
 weather$Date <- unlist(lapply(weather$Date, convertToUnixTime, "%m-%d-%Y"))
 
-write.csv(weather, "open_data_year_one/cleaned/weather.csv", row.names=FALSE)
+write.csv(weather, "clean_data/weather.csv", row.names=FALSE)
 
 ####################
 ### STATIONS cleanup
 ####################
 
-write.csv(stations, "open_data_year_one/cleaned/stations.csv", row.names=FALSE)
+write.csv(stations, "clean_data/stations.csv", row.names=FALSE)
 
 #####################
 ### SUN POSITIONS
@@ -66,7 +66,7 @@ seattle <- SpatialPoints(matrix(c(-122.33, 47.61),nrow=1), proj4string=CRS("+pro
 
 # Time sequence of interest
 timeRange <- seq(ymd("2014-10-12", tz="US/Pacific"), 
-                 ymd("2015-10-11"), tz="US/Pacific", 
+                 ymd("2015-10-12"), tz="US/Pacific", 
                  by="day")
 
 # Find sunrises as POSIXct
@@ -79,4 +79,4 @@ sunrisesunset <- data.frame(date=strftime(sunrises$time, format="%Y-%m-%d"),
            sunrise=strftime(sunrises$time, format="%H:%M:%S"),
            sunset=strftime(sunsets$time, format="%H:%M:%S"))
 
-write.csv(sunrisesunset, "open_data_year_one/cleaned/sunriset.csv", row.names=FALSE)
+write.csv(sunrisesunset, "clean_data/sunriset.csv", row.names=FALSE)
