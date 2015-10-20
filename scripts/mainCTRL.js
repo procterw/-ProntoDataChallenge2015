@@ -21,8 +21,7 @@
 		vm.timeStart = new Date(2015, 7, 7);
     vm.timeStop = new Date(2015, 7, 8);
     vm.currentTime = new Date(2015, 7, 7);
-    vm.minpersec = 60;
-		vm.isNight = isNight;
+    vm.minpersec = 30;
 
 		DataFactory.loadData(function(trips, stations, weather, seattle) {
       MapFactory.resize();
@@ -84,39 +83,6 @@
         MapFactory.drawMap();
 
       }, 50);
-
-
-
-    }
-
-		// function startAnimation() {
-
-		// 	setInterval(function() {
-				
-		// 		// Add 5 minutes to time
-		// 		vm.time = new Date(vm.time.getTime() +  1000 * 60 * 1);
-		// 		$scope.$apply();
-
-		// 		var trips = DataFactory.filterByTime(DataFactory.trips, vm.time);
-
-  //       var activeTrips = DataFactory.findTripsAt(vm.time);
-
-		// 		// Find the coords for trip start and stop
-	
-		// 		// MapFactory.drawStations(DataFactory.stations);
-		// 		MapFactory.drawBikes(activeTrips);
-  //       // MapFactory.drawMap(DataFactory.seattle)
-
-		// 	}, 40)
-
-		// }
-
-		function isNight() {
-			var time = vm.time.getHours();
-			return ((time < 5) || (time > 20));
-		}
-
-
 
 	}
 
