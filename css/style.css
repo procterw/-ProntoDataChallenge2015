@@ -39,6 +39,13 @@ h2, h3 {
 	height: 100%;
 }
 
+.overlay-panel {
+	display: absolute;
+	top: 0;
+	left: 0;
+	z-index: 1000;
+}
+
 .sidebar {
 	position: fixed;
 	left: 0;
