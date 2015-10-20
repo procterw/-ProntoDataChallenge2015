@@ -1,11 +1,12 @@
 # Script for cleaning and shrinking data files as much as possible.
 
 library(lubridate)
+library(maptools)
 
 setwd("~/projects/BikeShare/")
 
 stations <- read.csv("open_data_year_one/2015_station_data.csv")
-statuses <- read.csv("open_data_year_one/2015_status_data.csv")
+# statuses <- read.csv("open_data_year_one/2015_status_data.csv")
 trips <- read.csv("open_data_year_one/2015_trip_data.csv")
 weather <- read.csv("open_data_year_one/2015_weather_data.csv")
 
@@ -37,9 +38,7 @@ trips$starttime <- unlist(lapply(trips$startime, convertToUnixTime))
 trips$stoptime <- unlist(lapply(trips$stoptime, convertToUnixTime))
 trips$tripduration <- trips$tripduration / 60
 
-test <- 
-
-write.csv(trips, "open_data_year_one/cleaned/trips.csv")
+write.csv(trips, "open_data_year_one/cleaned/trips.csv", row.names=FALSE)
 
 
 ####################
@@ -50,10 +49,34 @@ wantedColnames <- c("Date", "Mean_Temperature_F","Max_Wind_Speed_MPH","Mean_Wind
 weather <- weather[(names(weather) %in% wantedColnames)]
 weather$Date <- unlist(lapply(weather$Date, convertToUnixTime, "%m-%d-%Y"))
 
-write.csv(weather, "open_data_year_one/cleaned/weather.csv")
+write.csv(weather, "open_data_year_one/cleaned/weather.csv", row.names=FALSE)
 
 ####################
 ### STATIONS cleanup
 ####################
 
-write.csv(stations, "open_data_year_one/cleaned/stations.csv")
+write.csv(stations, "open_data_year_one/cleaned/stations.csv", row.names=FALSE)
+
+#####################
+### SUN POSITIONS
+#####################
+
+# General location of seattle
+seattle <- SpatialPoints(matrix(c(-122.33, 47.61),nrow=1), proj4string=CRS("+proj=longlat +datum=26910"))
+
+# Time sequence of interest
+timeRange <- seq(ymd("2014-10-12", tz="US/Pacific"), 
+                 ymd("2015-10-11"), tz="US/Pacific", 
+                 by="day")
+
+# Find sunrises as POSIXct
+sunrises <- sunriset(seattle, direction="sunrise", dateTime=timeRange, POSIXct.out=TRUE)
+
+# Find sunrises as POSIXct
+sunsets <- sunriset(seattle, direction="sunset", dateTime=timeRange, POSIXct.out=TRUE)
+
+sunrisesunset <- data.frame(date=strftime(sunrises$time, format="%Y-%m-%d"),
+           sunrise=strftime(sunrises$time, format="%H:%M:%S"),
+           sunset=strftime(sunsets$time, format="%H:%M:%S"))
+
+write.csv(sunrisesunset, "open_data_year_one/cleaned/sunriset.csv", row.names=FALSE)
