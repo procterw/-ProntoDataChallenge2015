@@ -39,7 +39,7 @@
 		Factory.waterScale = d3.scale.linear();
 
 		
-
+		// The Queue of bike positions to draw
 		Factory.bikeQueue = {
 			data: [],
 			posData: [],
@@ -59,7 +59,7 @@
 			render: drawBikes
 		}
 
-    Factory.bikeTrailQueue = []; // leftover paths
+
 
 
 		// Initialize scales
@@ -67,6 +67,8 @@
 		var yScale = d3.scale.linear();
 		var waterScale = d3.scale.linear();
 		var landScale = d3.scale.linear();
+		var borderScale = d3.scale.linear();
+		var pathScale = d3.scale.linear();
 
 		// d3 zoom behavior
 		Factory.stations.call(d3.behavior.zoom()
@@ -76,9 +78,11 @@
 		// Keep track of translations and zooms
 		var translation = [0,0];
 		var zoomLevel = 1;
+		var retinaZoom = 1;
 
-		// Bounding box of parent div
-		var bbox
+		// Keep track of width and height
+		var width;
+		var height;
 
 		return Factory;
 
@@ -94,6 +98,8 @@
 
 			Factory.waterScale.domain(sunDomain);
 			landScale.domain(sunDomain);
+			borderScale.domain(sunDomain);
+			pathScale.domain(sunDomain);
 
 			var waterNight = "#515D89";
 			var waterMorning = "#CAE5EA";
@@ -105,41 +111,78 @@
 			var landMid = "#F5F5F5";
 			var landEvening = "#E5BAC0";
 
+			var borderNight = "#515D89";
+			var borderMorning = "#CAE5EA";
+			var borderMid = "#B2D9EA";
+			var borderEvening = "#B7C6E5";
+
+			var pathNight = "rgba(255,255,255,0.1)";
+			var pathDay = "rgba(0,0,0,0.1)";
+
+
 			Factory.waterScale.range([waterNight, waterNight, waterMorning, waterMid, waterMid, waterEvening, waterNight, waterNight]);
+
 			landScale.range([landNight, landNight, landMorning, landMid, landMid, landEvening, landNight, landNight]);
+
+			borderScale.range([borderNight, borderNight, borderMorning, borderMid, borderMid, borderEvening, borderNight, borderNight]);
+
+			pathScale.range([pathNight, pathNight, pathDay, pathDay, pathDay, pathDay, pathNight, pathNight])
 
 		}
 
 		// Resize behavior called when window size changes.
 		function resize() {
 
+			// Find retina zoom level
+			var devicePixelRatio = window.devicePixelRatio || 1
+			var ctx = Factory.bikes.node().getContext('2d');
+	    var backingStoreRatio = ctx.webkitBackingStorePixelRatio ||
+        ctx.mozBackingStorePixelRatio ||
+        ctx.msBackingStorePixelRatio ||
+        ctx.oBackingStorePixelRatio ||
+        ctx.backingStorePixelRatio || 1
+
+      retinaZoom = devicePixelRatio / backingStoreRatio;
+
+      zoomLevel = zoomLevel * retinaZoom;
+
 			// find new bounding box
-			bbox = Factory.seattle.node().parentNode.getBoundingClientRect();
+			var bbox = Factory.seattle.node().parentNode.getBoundingClientRect();
+
+			width = bbox.width * retinaZoom;
+			height = bbox.height * retinaZoom;
 
 			// Resize canvases
-			Factory.bikes.attr("width", bbox.width);
-			Factory.bikes.attr("height", bbox.height);
-			Factory.stations.attr("width", bbox.width);
-			Factory.stations.attr("height", bbox.height);
-			Factory.seattle.attr("width", bbox.width);
-			Factory.seattle.attr("height", bbox.height);
+			Factory.bikes.attr("width", width);
+			Factory.bikes.attr("height", height);
+			Factory.stations.attr("width", width);
+			Factory.stations.attr("height", height);
+			Factory.seattle.attr("width", width);
+			Factory.seattle.attr("height",height);
+
+			Factory.bikes.style("width", width/retinaZoom + "px");
+			Factory.bikes.style("height", height/retinaZoom + "px");
+			Factory.stations.style("width", width/retinaZoom + "px");
+			Factory.stations.style("height", height/retinaZoom + "px");
+			Factory.seattle.style("width", width/retinaZoom + "px");
+			Factory.seattle.style("height", height/retinaZoom + "px");
 
 			// Update x and y scales with new domain and range.
 			// The domain has to change because we don't want it to scale down
 			// at small sizes
 			xScale
 				.domain([
-					mapCenterX - 0.016 * (bbox.width/Math.min(250, bbox.width, bbox.height)),
-					mapCenterX + 0.016 * (bbox.width/Math.min(250, bbox.width, bbox.height))
+					mapCenterX - 0.016 * (width/Math.min(250, width, height)),
+					mapCenterX + 0.016 * (width/Math.min(250, width, height))
 					])
-				.range([0,bbox.width]);
+				.range([0,width]);
 
 			yScale
 				.domain([
-					mapCenterY - 0.011 * (bbox.height/Math.min(250, bbox.width, bbox.height)),
-					mapCenterY + 0.011 * (bbox.height/Math.min(250, bbox.width, bbox.height))
+					mapCenterY - 0.011 * (height/Math.min(250, width, height)),
+					mapCenterY + 0.011 * (height/Math.min(250, width, height))
 					])
-				.range([bbox.height,0]);
+				.range([height,0]);
 
 		}
 
@@ -152,7 +195,7 @@
 			// Get context, clear it, save it's state, then apply current
 			// translation and zoom
 			var ctx = Factory.bikes.node().getContext("2d");
-			ctx.clearRect(0, 0, bbox.width, bbox.height);
+			ctx.clearRect(0, 0, width, height);
 			ctx.save()
 			ctx.translate(translation[0], translation[1]);
 			ctx.scale(zoomLevel, zoomLevel);
@@ -167,7 +210,7 @@
 					ctx.moveTo(bike.start[0], bike.start[1]);
 					ctx.lineTo(bike.current[0],bike.current[1]);
 					ctx.lineWidth=3;
-					ctx.strokeStyle = "rgba(0,0,0,0.1)";
+					ctx.strokeStyle = _currentTime ? pathScale(_currentTime) : "rgba(0,0,0,0.1)";
 					ctx.stroke();
 
 				} else {
@@ -176,7 +219,7 @@
 					ctx.beginPath();
 					ctx.arc(bike.start[0],bike.start[1],14,-bike.current[2],0)
 					ctx.lineWidth=3;
-					ctx.strokeStyle = "rgba(0,0,0,0.1)";
+					ctx.strokeStyle = _currentTime ? pathScale(_currentTime) : "rgba(0,0,0,0.1)";
 					ctx.stroke();
 
 				}
@@ -210,7 +253,7 @@
 			// Get context, clear it, save it's state, then apply current
 			// translation and zoom
 			var ctx = Factory.stations.node().getContext("2d");
-			ctx.clearRect(0, 0, bbox.width, bbox.height);
+			ctx.clearRect(0, 0, width, height);
 			ctx.save()
 			ctx.translate(translation[0], translation[1]);
 			ctx.scale(zoomLevel, zoomLevel);
@@ -250,7 +293,7 @@
 			// Get context, clear it, save it's state, then apply current
 			// translation and zoom
 			var ctx = Factory.seattle.node().getContext('2d');
-			ctx.clearRect(0, 0, bbox.width, bbox.height);
+			ctx.clearRect(0, 0, width, height);
 			ctx.save()
 			ctx.translate(translation[0], translation[1]);
 			ctx.scale(zoomLevel, zoomLevel);
@@ -269,9 +312,9 @@
 			}
 
 			// Apply style attributes and draw polygons
-			ctx.fillStyle = _currentTime ? landScale(_currentTime) : "#EEE";
-			ctx.strokeStyle = _currentTime ? landScale(_currentTime) : "#FFF";
-			ctx.lineWidth=2;
+			ctx.fillStyle = _currentTime ? landScale(_currentTime) : "rgb(245,245,245)";
+			ctx.strokeStyle = _currentTime ? borderScale(_currentTime) : "rgb(252,252,252)";
+			ctx.lineWidth=1;
 			ctx.fill();
 			ctx.stroke();
 
@@ -285,7 +328,7 @@
 
 			// Update translation and zoom
 			translation = d3.event.translate;
-			zoomLevel = d3.event.scale;
+			zoomLevel = d3.event.scale * retinaZoom;
 
 			// var canvas = Factory.seattle.node().getContext("2d");
 			// canvas.save();

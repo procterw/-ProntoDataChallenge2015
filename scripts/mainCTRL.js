@@ -19,9 +19,9 @@
 
 		vm.test = 5;
 		vm.timeStart = new Date(2015, 7, 7);
-    vm.timeStop = new Date(2015, 7, 8);
+    vm.timeStop = new Date(2015, 7, 9);
     vm.currentTime = new Date(2015, 7, 7);
-    vm.minpersec = 30;
+    vm.minpersec = 60;
 
 		DataFactory.loadData(function(trips, stations, weather, seattle) {
       MapFactory.resize();
@@ -47,8 +47,6 @@
       var frameTime = +t1;
 
       MapFactory.setSunScales(DataFactory.getSunriseSunset(new Date((t1.getTime()+t2.getTime())/2)));
-
-      console.log(MapFactory.waterScale(0))
 
       // Animation loop
       var interval = setInterval(function() {
@@ -76,9 +74,9 @@
         var timeInMin = vm.currentTime.getHours() * 60 + vm.currentTime.getMinutes();
 
         // Set background color
-        vm.waterColor = MapFactory.waterScale(timeInMin);
+        // vm.waterColor = MapFactory.waterScale(timeInMin);
 
-        MapFactory.setTime(timeInMin);
+        // MapFactory.setTime(timeInMin);
 
         MapFactory.drawMap();
 
