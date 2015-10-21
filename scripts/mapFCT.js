@@ -34,6 +34,9 @@
 		Factory.setSunScales = setSunScales;
 		Factory.waterScale = d3.scale.linear();
 
+		// Minutes it takes a path to fade
+		var pathFadeTime = 60;
+
 		
 		// The Queue of bike positions to draw
 		Factory.bikeQueue = {
@@ -43,19 +46,32 @@
 				this.data = this.data.concat(data);
 			},
 			getPositions: function(getCurrentLocation, time) {
+				// Filter out data that is too old
+				this.data = this.data.filter(function(d) {
+					return (time - d.stoptime_min) < pathFadeTime;
+				});
 				this.posData = this.data.map(function(d) {
 					var current = getCurrentLocation(d, time);
+					var sameStation = d.from_station_id === d.to_station_id;
 					return {
 						current: [xScale(current[0]), yScale(current[1]), current[2]],
 						start: [xScale(d.startCoords[1]), yScale(d.startCoords[0])],
-						sameStation: d.from_station_id === d.to_station_id
+						sameStation: sameStation,
+						opacity: time > d.stoptime_min ? (pathFadeTime + d.stoptime_min - time) / pathFadeTime : 1
 					}
 				});
+			},
+			clear: function() {
+				this.data = [];
+				this.postData = [];
+				this.render();
 			},
 			render: drawBikes
 		}
 
-
+		function findOpacity(ride) {
+			return ride
+		}
 
 
 		// Initialize scales
@@ -187,8 +203,6 @@
 					])
 				.range([height/retinaZoom,0]);
 
-			console.log(xScale(mapCenterX))
-
 		}
 
 
@@ -208,14 +222,17 @@
 			// Draw each bike
 			angular.forEach(bikes, function(bike) {
 
+				ctx.save()
+				ctx.globalAlpha = bike.opacity * 0.1;
+
 				if (!bike.sameStation) {
 
 					// Draw bike paths
 					ctx.beginPath();
 					ctx.moveTo(bike.start[0], bike.start[1]);
 					ctx.lineTo(bike.current[0],bike.current[1]);
-					ctx.lineWidth=3;
-					ctx.strokeStyle = _currentTime ? pathScale(_currentTime) : "rgba(0,0,0,0.1)";
+					ctx.lineWidth=2;
+					ctx.strokeStyle = _currentTime ? pathScale(_currentTime) : "#FDFBE8"
 					ctx.stroke();
 
 				} else {
@@ -223,18 +240,20 @@
 					// Draw "joy ride" circles around stations
 					ctx.beginPath();
 					ctx.arc(bike.start[0],bike.start[1],14,-bike.current[2],0)
-					ctx.lineWidth=3;
-					ctx.strokeStyle = _currentTime ? pathScale(_currentTime) : "rgba(0,0,0,0.1)";
+					ctx.lineWidth=2;
+					ctx.strokeStyle = _currentTime ? pathScale(_currentTime) : "#FDFBE8";
 					ctx.stroke();
 
 				}
 
+				ctx.restore()
+
 				// Draw bike
 				ctx.beginPath();
 				ctx.arc(bike.current[0],bike.current[1],3,0,2*Math.PI);
-				ctx.fillStyle = "#3498db";
-				ctx.lineWidth=1;
-				ctx.strokeStyle = "white";
+				ctx.fillStyle = "#FEDE94";
+				ctx.lineWidth=2;
+				ctx.strokeStyle = "#333";
 				ctx.stroke();
 				ctx.fill();
 
@@ -271,10 +290,10 @@
 
 				// Draw circles
 				ctx.beginPath();
-				ctx.arc(x,y,4,0,2*Math.PI);
-				ctx.fillStyle = "#27ae60";
+				ctx.arc(x,y,5,0,2*Math.PI);
+				ctx.fillStyle = "#f39c12";
 				ctx.lineWidth=2;
-				ctx.strokeStyle = "#EEE";
+				ctx.strokeStyle = "#333";
 				ctx.fill();
 				ctx.stroke();
 
@@ -317,8 +336,8 @@
 			}
 
 			// Apply style attributes and draw polygons
-			ctx.fillStyle = _currentTime ? landScale(_currentTime) : "rgb(245,245,245)";
-			ctx.strokeStyle = _currentTime ? borderScale(_currentTime) : "rgb(252,252,252)";
+			ctx.fillStyle = _currentTime ? landScale(_currentTime) : "#333";//"rgb(245,245,245)";
+			ctx.strokeStyle = _currentTime ? borderScale(_currentTime) : "#444"; //"rgb(252,252,252)";
 			ctx.lineWidth=1;
 			ctx.fill();
 			ctx.stroke();

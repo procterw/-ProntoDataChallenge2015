@@ -27,7 +27,8 @@
 	<!-- <h2>{{main.time.toDateString()}}</h2>
 	<h3>{{main.time.getHours()}}:{{main.time.getMinutes()}}</h3> -->
 
-	<div class="canvas-wrapper" ng-style="{backgroundColor:main.waterColor}">
+	<!-- <div class="canvas-wrapper" ng-style="{backgroundColor:main.waterColor}"> -->
+	<div class="canvas-wrapper">
 
 		<div class="fill-rect">
 
@@ -42,10 +43,26 @@
 	</div>
 
 	<div class="sidebar">
-		{{main.currentTime.toDateString()}} {{main.currentTime.getHours()}}:{{main.currentTime.getMinutes()}}
-		{{main.currentWeather()}}
+		{{main.currentTime / 60}}
+		<br>
 
-		{{main.waterColor}}
+		{{main.query}}
+
+		<br>
+
+		<select 
+			ng-model="main.query.subset"
+			ng-options="option.val as option.name for option in main.subsetOptions">
+		</select>
+
+		<select 
+			ng-model="main.query.month"
+			ng-options="option.val as option.name for option in main.monthOptions">
+		</select>
+
+		<button ng-click="main.animateQuery()">GO</button>
+		<button ng-click="main.stop()">STOP</button>
+
 	</div>
 
 

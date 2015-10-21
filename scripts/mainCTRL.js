@@ -17,17 +17,32 @@
 
 		var vm = this;
 
-		vm.test = 5;
+    // Default options
 		vm.timeStart = new Date(2015, 7, 7);
     vm.timeStop = new Date(2015, 7, 9);
     vm.currentTime = new Date(2015, 7, 7);
-    vm.minpersec = 60;
+    vm.minpersec = 15;
+
+    // Forms
+    vm.subsetOptions = DataFactory.subsetOptions;
+    vm.monthOptions = DataFactory.monthOptions;
+    vm.query = DataFactory.query;
+
+    vm.animateQuery = animateQuery;
+
+    vm.stop = function() {
+      if (activeAnimation) clearInterval(activeAnimation);
+      activeAnimation = false;
+      MapFactory.bikeQueue.clear();
+    }
+
 
 		DataFactory.loadData(function(trips, stations, weather, seattle) {
       MapFactory.resize();
       MapFactory.drawMap(seattle);
       MapFactory.drawStations(DataFactory.stations);
-			animateRange(vm.timeStart, vm.timeStop);
+			// animateRange(vm.timeStart, vm.timeStop);
+      // animateQuery();
 		});
 
     window.onresize = function(event) {
@@ -35,8 +50,60 @@
       MapFactory.drawMap(DataFactory.seattle);
     };
 
+    // Is an animation currently running? 
+    var activeAnimation
+
+    function animateQuery() {
+
+      // Find data subset
+      var dataSubset = DataFactory.makeQuery();
+
+      if (dataSubset.length < 1) return;
+
+      // Find median start time for animating time of day
+      var medianTime = dataSubset[Math.round(dataSubset.length/2)].starttime;
+      MapFactory.setSunScales(DataFactory.getSunriseSunset(medianTime));
+
+      // Strip day month and year off of times
+      dataSubset = DataFactory.getTimeInMinutes(dataSubset);
+
+      vm.timeStart = 0,
+      vm.timeStop = 24 * 60;
+
+      var startTimer = new Date();
+      var frameTime = 0;
+
+      vm.currentTime = 0;
+
+      activeAnimation = setInterval(function() {
+
+        // How much RUN time has passed
+        var dt = (new Date()).getTime() - startTimer.getTime();
+
+        // How many BIKE minutes have passed
+        vm.currentTime = vm.minpersec * (dt / 1000);
+        $scope.$apply();
+
+        var activeBikes = DataFactory.findTripStations(DataFactory.getDataBefore(dataSubset, vm.currentTime));
+        dataSubset = DataFactory.getDataAfter(dataSubset, vm.currentTime);
+
+        MapFactory.bikeQueue.addData(activeBikes);
+        MapFactory.bikeQueue.getPositions(DataFactory.getCurrentLocation, vm.currentTime);
+        MapFactory.bikeQueue.render();
+        
+
+        // If time has gone too far, stop the animation
+        if (vm.currentTime > vm.timeStop) clearInterval(activeAnimation);
+
+      }, 50);
+
+    }
+
     // Run an animation between two timesteps
-    function animateRange(t1, t2) {
+    function animateRange() {
+
+      var t1 = vm.timeStart,
+      t2 = vm.timeStop;
 
       var dataSubset = DataFactory.filterByTimeRange(DataFactory.trips, t1, t2);
 
@@ -49,9 +116,7 @@
       MapFactory.setSunScales(DataFactory.getSunriseSunset(new Date((t1.getTime()+t2.getTime())/2)));
 
       // Animation loop
-      var interval = setInterval(function() {
-
-        if (vm.currentTime > +t2) clearInterval(interval);
+      activeAnimation = setInterval(function() {
 
         // How much time has gone by?
         var dt = new Date() - startTimer;
@@ -80,9 +145,12 @@
 
         MapFactory.drawMap();
 
+        if (vm.currentTime > +t2) clearInterval(activeAnimation);
+
       }, 50);
 
   	}
+
   }
 
 })();
