@@ -17,10 +17,6 @@
 
 		var Factory = {};
 
-		// Always focus the map on this point when zoomed out?
-		var mapCenterX = -122.3215;
-		var mapCenterY = 47.63;
-
 		var _currentTime;
 
 		Factory.setTime = function(time) { _currentTime = time; }
@@ -142,6 +138,7 @@
         ctx.oBackingStorePixelRatio ||
         ctx.backingStorePixelRatio || 1
 
+      // retinaZoom = 1;
       retinaZoom = devicePixelRatio / backingStoreRatio;
 
       zoomLevel = zoomLevel * retinaZoom;
@@ -170,19 +167,27 @@
 			// Update x and y scales with new domain and range.
 			// The domain has to change because we don't want it to scale down
 			// at small sizes
+			var screenScale = Math.min(250, width, height);
+
+			// Always focus the map on this point when zoomed out?
+			var mapCenterX = -122.3215;
+			var mapCenterY = 47.63;
+
 			xScale
 				.domain([
-					mapCenterX - 0.016 * (width/Math.min(250, width, height)),
-					mapCenterX + 0.016 * (width/Math.min(250, width, height))
+					mapCenterX - 0.016 * (width/screenScale) / retinaZoom,
+					mapCenterX + 0.016 * (width/screenScale) / retinaZoom
 					])
-				.range([0,width]);
+				.range([0,width/retinaZoom]);
 
 			yScale
 				.domain([
-					mapCenterY - 0.011 * (height/Math.min(250, width, height)),
-					mapCenterY + 0.011 * (height/Math.min(250, width, height))
+					mapCenterY - 0.011 * (height/screenScale) / retinaZoom,
+					mapCenterY + 0.011 * (height/screenScale) / retinaZoom
 					])
-				.range([height,0]);
+				.range([height/retinaZoom,0]);
+
+			console.log(xScale(mapCenterX))
 
 		}
 
