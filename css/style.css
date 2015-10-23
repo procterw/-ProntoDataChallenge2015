@@ -17,7 +17,7 @@ h2, h3 {
 }
 
 .canvas-wrapper {
-	background-color: #444555;
+	background-color: #3A4851;
 	height: 100%;
 	margin: 0;
 	margin-left: 300px;
@@ -27,11 +27,26 @@ h2, h3 {
 
 .canvas,
 .canvas-background {
+	z-index: 1;
 	top: 0;
 	bottom: 0;
 	left: 0;
 	right: 0;
 	position: absolute;
+}
+
+.canvas-cover {
+	position: absolute;
+	top: 0;
+	z-index: 100;
+	color: white;
+	padding: 10px;
+	background-color: rgba(0,0,0,0.1);
+}
+
+.canvas-cover h3 {
+	font-size: 24px;
+	font-weight: 100;
 }
 
 .canvas-background img {

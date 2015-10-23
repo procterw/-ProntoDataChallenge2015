@@ -18,9 +18,9 @@
 		var vm = this;
 
     // Default options
-		vm.timeStart = new Date(2015, 7, 7);
-    vm.timeStop = new Date(2015, 7, 9);
-    vm.currentTime = new Date(2015, 7, 7);
+		vm.timeStart;
+    vm.timeStop;
+    vm.currentTime = 0;
     vm.minpersec = 30;
 
     // Forms
@@ -29,6 +29,8 @@
     vm.query = DataFactory.query;
 
     vm.animateQuery = animateQuery;
+
+    vm.formatTime = formatTime;
 
     vm.stop = function() {
       if (activeAnimation) clearInterval(activeAnimation);
@@ -161,6 +163,16 @@
       }, 50);
 
   	}
+
+    // Formates a "minute" time into hours and minutes
+    function formatTime(time) {
+      var hours = Math.floor(time / 60) + 4;
+      var minutes = Math.round(time % 60);
+      if (hours === 0) hours = 12;
+      if (hours < 10) hours = "0" + hours;
+      if (minutes < 10) minutes = "0" + minutes;
+      return hours + ":" + minutes + " " + (time < 12 * 60 ? "AM" : "PM");
+    }
 
   }
 

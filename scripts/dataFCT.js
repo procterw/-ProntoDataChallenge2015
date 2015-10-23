@@ -69,10 +69,11 @@
 
     Factory.query = {
       month: 6,
-      subset: "rainy"
+      subset: 5
     };
 
-
+    // four hour timeshift to apply to all dates
+    var timeShift = -1000 * 60 * 60 * 4;
 
 
 		return Factory;
@@ -97,24 +98,26 @@
     function addStationTracking(stations) {
         
         stations.forEach(function(d) {
-          d.count = 0;
+          d.arrivals = 0;
+          d.departures = 0;
         });
 
         stations.addBike = function(terminal) {
           stations.forEach(function(s) {
-            if (s.terminal === terminal) s.count++;
+            if (s.terminal === terminal) s.arrivals++;
           });
         };
 
         stations.removeBike = function(terminal) {
           stations.forEach(function(s) {
-            if (s.terminal === terminal) s.count--;
+            if (s.terminal === terminal) s.departures++;
           });
         };
 
         stations.resetBikes = function() {
           stations.forEach(function(s) {
-            d.count=0;
+            d.arrivals=0;
+            d.departures=0;
           });
         };
 
@@ -152,7 +155,7 @@
         return Factory.trips.filter(function(d) {
           var isRightMonth = month === d.starttime.getMonth();
           var isRightDay = subset === d.starttime.getDay();
-          return isRightDay && isRightDay;
+          return isRightDay && isRightMonth;
         });
       }
 
@@ -173,17 +176,17 @@
     function cleanWeatherData(data) {
       angular.forEach(data, function(d) {
         d.Precipitation_In = +d.Precipitation_In;
-        d.Date = new Date((+d.Date) * 60 * 1000);
-        d.sunrise = [+d.sunrise.split(":")[0],+d.sunrise.split(":")[1]];
-        d.sunset = [+d.sunset.split(":")[0],+d.sunset.split(":")[1]];
+        d.Date = new Date((+d.Date) * 60 * 1000 + timeShift);
+        d.sunrise = [+d.sunrise.split(":")[0] - 4,+d.sunrise.split(":")[1]];
+        d.sunset = [+d.sunset.split(":")[0] - 4,+d.sunset.split(":")[1]];
       });
       return data;
     }
 
     function cleanTripData(data) {
       angular.forEach(data, function(d) {
-        d.starttime = new Date((+d.starttime) * 60 * 1000);
-        d.stoptime = new Date((+d.stoptime) * 60 * 1000);
+        d.starttime = new Date((+d.starttime) * 60 * 1000 + timeShift);
+        d.stoptime = new Date((+d.stoptime) * 60 * 1000 + timeShift);
       })
       return data;
     }
