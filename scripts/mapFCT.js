@@ -35,17 +35,25 @@
 		Factory.waterScale = d3.scale.linear();
 
 		// Minutes it takes a path to fade
-		var pathFadeTime = 60;
-
+		var pathFadeTime = 180;
 		
 		// The Queue of bike positions to draw
 		Factory.bikeQueue = {
 			data: [],
 			posData: [],
 			addData: function(data) {
+				data.forEach(function(d) {
+					Factory.stations.datum().removeBike(d.from_station_id)
+				});
 				this.data = this.data.concat(data);
+				
 			},
 			getPositions: function(getCurrentLocation, time) {
+				this.data.forEach(function(d) {
+					if ((time - d.stoptime_min) >= pathFadeTime) {
+						Factory.stations.datum().addBike(d.to_station_id)
+					}
+				});
 				// Filter out data that is too old
 				this.data = this.data.filter(function(d) {
 					return (time - d.stoptime_min) < pathFadeTime;
@@ -68,11 +76,6 @@
 			},
 			render: drawBikes
 		}
-
-		function findOpacity(ride) {
-			return ride
-		}
-
 
 		// Initialize scales
 		var xScale = d3.scale.linear();
@@ -106,39 +109,33 @@
 			sunrise = sunrise[0] * 60 + sunrise[1]; // which minute of day is it
 			sunset = sunset[0] * 60 + sunset[1]; // which minute of day is it
 
-			var sunDomain = [0, sunrise - 120, sunrise, sunrise+120, sunset-120, sunset, sunset+120, (24*60)];
+			var sunDomainLong = [0, sunrise - 60, sunrise+60, sunset-60, sunset+60, (24*60)];
+			var sunDomainShort = [0, sunrise - 10, sunrise+10, sunset-10, sunset+10, (24*60)];
 
-			Factory.waterScale.domain(sunDomain);
-			landScale.domain(sunDomain);
-			borderScale.domain(sunDomain);
-			pathScale.domain(sunDomain);
+			Factory.waterScale.domain(sunDomainLong);
+			landScale.domain(sunDomainLong);
+			borderScale.domain(sunDomainLong);
+			pathScale.domain(sunDomainShort);
 
-			var waterNight = "#515D89";
-			var waterMorning = "#CAE5EA";
-			var waterMid = "#B2D9EA";
-			var waterEvening = "#B7C6E5";
+			var waterNight = "#3A4851";
+			var waterDay = "#BAD3D0";
 
-			var landNight = "#464651";
-			var landMorning = "#F7E8DC";
-			var landMid = "#F5F5F5";
-			var landEvening = "#E5BAC0";
+			var landNight = "#3F3C3A";
+			var landDay = "#E2DCD5";
 
-			var borderNight = "#515D89";
-			var borderMorning = "#CAE5EA";
-			var borderMid = "#B2D9EA";
-			var borderEvening = "#B7C6E5";
+			var borderNight = "#595959";
+			var borderDay = "#F7F7F7";
 
-			var pathNight = "rgba(255,255,255,0.1)";
-			var pathDay = "rgba(0,0,0,0.1)";
+			var pathNight = "#F2EABD";
+			var pathDay = "#4B756D";
 
+			Factory.waterScale.range([waterNight, waterNight, waterDay, waterDay, waterDay, waterNight]);
 
-			Factory.waterScale.range([waterNight, waterNight, waterMorning, waterMid, waterMid, waterEvening, waterNight, waterNight]);
+			landScale.range([landNight, landNight, landDay, landDay, landDay, landNight]);
 
-			landScale.range([landNight, landNight, landMorning, landMid, landMid, landEvening, landNight, landNight]);
+			borderScale.range([borderNight, borderNight, borderDay, borderDay, borderDay, borderNight]);
 
-			borderScale.range([borderNight, borderNight, borderMorning, borderMid, borderMid, borderEvening, borderNight, borderNight]);
-
-			pathScale.range([pathNight, pathNight, pathDay, pathDay, pathDay, pathDay, pathNight, pathNight])
+			pathScale.range([pathNight, pathNight, pathDay, pathDay, pathDay, pathNight]);
 
 		}
 
@@ -157,7 +154,7 @@
       // retinaZoom = 1;
       retinaZoom = devicePixelRatio / backingStoreRatio;
 
-      zoomLevel = zoomLevel * retinaZoom;
+      // zoomLevel = zoomLevel * retinaZoom;
 
 			// find new bounding box
 			var bbox = Factory.seattle.node().parentNode.getBoundingClientRect();
@@ -205,8 +202,6 @@
 
 		}
 
-
-
 		function drawBikes() {
 
 			var bikes = Factory.bikeQueue.posData;
@@ -217,47 +212,122 @@
 			ctx.clearRect(0, 0, width, height);
 			ctx.save()
 			ctx.translate(translation[0], translation[1]);
-			ctx.scale(zoomLevel, zoomLevel);
-			
-			// Draw each bike
-			angular.forEach(bikes, function(bike) {
+			ctx.scale(zoomLevel * retinaZoom, zoomLevel * retinaZoom);
 
-				ctx.save()
-				ctx.globalAlpha = bike.opacity * 0.1;
+			ctx.strokeStyle = _currentTime ? pathScale(_currentTime) : "white";
+			ctx.lineWidth=2;
 
-				if (!bike.sameStation) {
+			// Draw the fading lines
+			angular.forEach(bikes.filter(function(bike) {
+				return bike.opacity < 1;
+			}), function (bike) {
 
-					// Draw bike paths
-					ctx.beginPath();
-					ctx.moveTo(bike.start[0], bike.start[1]);
-					ctx.lineTo(bike.current[0],bike.current[1]);
-					ctx.lineWidth=2;
-					ctx.strokeStyle = _currentTime ? pathScale(_currentTime) : "#FDFBE8"
-					ctx.stroke();
+				ctx.save();
+				ctx.globalAlpha = Math.round(100 * bike.opacity * 0.15) / 100;
+				ctx.beginPath();
+
+				if (bike.sameStation) {
+
+					ctx.arc(bike.start[0],bike.start[1],14,-bike.current[2],0)
 
 				} else {
 
-					// Draw "joy ride" circles around stations
-					ctx.beginPath();
-					ctx.arc(bike.start[0],bike.start[1],14,-bike.current[2],0)
-					ctx.lineWidth=2;
-					ctx.strokeStyle = _currentTime ? pathScale(_currentTime) : "#FDFBE8";
-					ctx.stroke();
+					ctx.moveTo(bike.start[0], bike.start[1]);
+					ctx.lineTo(bike.current[0],bike.current[1]);
 
 				}
 
-				ctx.restore()
-
-				// Draw bike
-				ctx.beginPath();
-				ctx.arc(bike.current[0],bike.current[1],3,0,2*Math.PI);
-				ctx.fillStyle = "#FEDE94";
-				ctx.lineWidth=2;
-				ctx.strokeStyle = "#333";
 				ctx.stroke();
-				ctx.fill();
+				ctx.restore();
 
 			});
+
+			ctx.strokeStyle = _currentTime ? pathScale(_currentTime) : "rgba(255,255,255,0.15)";
+
+			// Active bike lines
+			angular.forEach(bikes.filter(function(bike) {
+				return bike.opacity === 1 && bike.sameStation;
+			}), function (bike) {
+
+				ctx.beginPath();
+				ctx.arc(bike.start[0],bike.start[1],14,-bike.current[2],0)
+
+			});
+
+			ctx.stroke();
+
+			// Active bike lines
+			angular.forEach(bikes.filter(function(bike) {
+				return bike.opacity === 1 && !bike.sameStation;
+			}), function (bike) {
+
+				ctx.moveTo(bike.start[0], bike.start[1]);
+				ctx.lineTo(bike.current[0],bike.current[1]);
+
+			});
+
+			// Draw all active lines
+			ctx.stroke();
+
+			// ctx.fillStyle = "#FEDE94";
+			// ctx.strokeStyle = "#333";
+
+			// angular.forEach(bikes.filter(function(bike) {
+			// 	return bike.opacity === 1;
+			// }), function(bike) {
+			// 	// Draw bike
+			// 	ctx.beginPath();
+			// 	ctx.arc(bike.current[0],bike.current[1],3,0,2*Math.PI);
+			// });
+
+			// ctx.stroke();
+			// ctx.fill();
+
+			
+			// // Draw each bike
+			// angular.forEach(bikes, function(bike) {
+
+			// 	// ctx.save()
+			// 	ctx.globalAlpha = Math.round(100 * bike.opacity * 0.15) / 100;
+
+			// 	if (!bike.sameStation) {
+
+			// 		// Draw bike paths
+			// 		ctx.beginPath();
+			// 		ctx.moveTo(bike.start[0], bike.start[1]);
+			// 		ctx.lineTo(bike.current[0],bike.current[1]);
+			// 		// ctx.lineWidth=2;
+			// 		// ctx.strokeStyle = _currentTime ? pathScale(_currentTime) : "#FDFBE8"
+			// 		// ctx.stroke();
+
+			// 	} else {
+
+			// 		// Draw "joy ride" circles around stations
+			// 		ctx.beginPath();
+			// 		ctx.arc(bike.start[0],bike.start[1],14,-bike.current[2],0)
+			// 		// ctx.lineWidth=2;
+			// 		// ctx.strokeStyle = _currentTime ? pathScale(_currentTime) : "#FDFBE8";
+			// 		// ctx.stroke();
+
+			// 	}
+
+			// 	ctx.stroke();
+			// 	ctx.restore()
+
+			// });
+
+			
+
+				// // Draw bike
+				// ctx.beginPath();
+				// ctx.arc(bike.current[0],bike.current[1],3,0,2*Math.PI);
+				// ctx.fillStyle = "#FEDE94";
+				// ctx.lineWidth=2;
+				// ctx.strokeStyle = "#333";
+				// ctx.stroke();
+				// ctx.fill();
+
+			// });
 
 			ctx.restore();
 
@@ -274,15 +344,19 @@
 				stations = Factory.stations.datum();
 			}
 
+			console.log(stations[1].count)
+
 			// Get context, clear it, save it's state, then apply current
 			// translation and zoom
 			var ctx = Factory.stations.node().getContext("2d");
 			ctx.clearRect(0, 0, width, height);
 			ctx.save()
 			ctx.translate(translation[0], translation[1]);
-			ctx.scale(zoomLevel, zoomLevel);
+			ctx.scale(zoomLevel * retinaZoom, zoomLevel * retinaZoom);
 
 			angular.forEach(stations, function(station) {
+
+				var r = Math.max(3, (station.count/3) + 6);
 				
 				// Station x and y in pixel coords
 				var x = xScale(+station.long);
@@ -290,10 +364,10 @@
 
 				// Draw circles
 				ctx.beginPath();
-				ctx.arc(x,y,5,0,2*Math.PI);
-				ctx.fillStyle = "#f39c12";
+				ctx.arc(x,y,r,0,2*Math.PI);
+				ctx.fillStyle = "#D68950";
 				ctx.lineWidth=2;
-				ctx.strokeStyle = "#333";
+				ctx.strokeStyle = _currentTime ? landScale(_currentTime) : "#333";
 				ctx.fill();
 				ctx.stroke();
 
@@ -320,27 +394,26 @@
 			ctx.clearRect(0, 0, width, height);
 			ctx.save()
 			ctx.translate(translation[0], translation[1]);
-			ctx.scale(zoomLevel, zoomLevel);
+			ctx.scale(zoomLevel * retinaZoom, zoomLevel * retinaZoom);
 
-			// Start drawing path
-			ctx.beginPath();
-
+			// Apply style attributes and draw polygons
+			ctx.fillStyle = _currentTime ? landScale(_currentTime) : "#333";
+			ctx.strokeStyle = _currentTime ? borderScale(_currentTime) : "#444";
+			ctx.lineWidth = 1;
+			
+			// ctx.beginPath();
 			// For each polygon, move the line path and continue drawing until
 			// that poylgon is finished
 			for (var i=0; i<polygons.length; i++) {
-					var polygon = polygons[i];
-					ctx.moveTo(xScale(polygon[0].x), yScale(polygon[0].y));
-					for (var k=1; k<polygon.length; k++) {
-						ctx.lineTo(xScale(polygon[k].x), yScale(polygon[k].y));
-					}
+				var polygon = polygons[i];
+				ctx.beginPath();
+				ctx.moveTo(xScale(polygon[0].x), yScale(polygon[0].y));
+				for (var k=1; k<polygon.length; k++) {
+					ctx.lineTo(xScale(polygon[k].x), yScale(polygon[k].y));
+				}
+				ctx.fill();
+				ctx.stroke();
 			}
-
-			// Apply style attributes and draw polygons
-			ctx.fillStyle = _currentTime ? landScale(_currentTime) : "#333";//"rgb(245,245,245)";
-			ctx.strokeStyle = _currentTime ? borderScale(_currentTime) : "#444"; //"rgb(252,252,252)";
-			ctx.lineWidth=1;
-			ctx.fill();
-			ctx.stroke();
 
 			// Restore previous state
 			ctx.restore();
@@ -352,7 +425,7 @@
 
 			// Update translation and zoom
 			translation = d3.event.translate;
-			zoomLevel = d3.event.scale * retinaZoom;
+			zoomLevel = d3.event.scale;
 
 			// var canvas = Factory.seattle.node().getContext("2d");
 			// canvas.save();

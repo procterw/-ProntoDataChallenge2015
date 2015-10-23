@@ -21,7 +21,7 @@
 		vm.timeStart = new Date(2015, 7, 7);
     vm.timeStop = new Date(2015, 7, 9);
     vm.currentTime = new Date(2015, 7, 7);
-    vm.minpersec = 15;
+    vm.minpersec = 30;
 
     // Forms
     vm.subsetOptions = DataFactory.subsetOptions;
@@ -41,19 +41,23 @@
       MapFactory.resize();
       MapFactory.drawMap(seattle);
       MapFactory.drawStations(DataFactory.stations);
-			// animateRange(vm.timeStart, vm.timeStop);
-      // animateQuery();
 		});
 
     window.onresize = function(event) {
       MapFactory.resize();
       MapFactory.drawMap(DataFactory.seattle);
+      MapFactory.drawBikes();
+      MapFactory.drawStations(DataFactory.makeStationList);
     };
 
     // Is an animation currently running? 
     var activeAnimation
 
     function animateQuery() {
+
+      vm.stop();
+
+      MapFactory.bikeQueue.clear();
 
       // Find data subset
       var dataSubset = DataFactory.makeQuery();
@@ -68,7 +72,7 @@
       dataSubset = DataFactory.getTimeInMinutes(dataSubset);
 
       vm.timeStart = 0,
-      vm.timeStop = 24 * 60;
+      vm.timeStop = 25 * 60;
 
       var startTimer = new Date();
       var frameTime = 0;
@@ -90,10 +94,17 @@
         MapFactory.bikeQueue.addData(activeBikes);
         MapFactory.bikeQueue.getPositions(DataFactory.getCurrentLocation, vm.currentTime);
         MapFactory.bikeQueue.render();
-        
 
+        MapFactory.drawStations();
+
+        vm.waterColor = MapFactory.waterScale(vm.currentTime % (24 * 60));
+        MapFactory.setTime(vm.currentTime % (24 * 60));
+        MapFactory.drawMap()
+        
         // If time has gone too far, stop the animation
-        if (vm.currentTime > vm.timeStop) clearInterval(activeAnimation);
+        if (vm.currentTime > vm.timeStop) {
+          vm.stop();
+        }
 
       }, 50);
 

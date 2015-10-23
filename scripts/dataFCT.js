@@ -83,7 +83,7 @@
 					d3.csv("clean_data/weather.csv", function(weather) {
 						d3.json("clean_data/Neighborhoods.json", function(error, geojson) {
               Factory.trips = cleanTripData(trips);
-              Factory.stations = stations;
+              Factory.stations = addStationTracking(stations);
               Factory.weather = cleanWeatherData(weather);
 							Factory.seattle = unpackTopoJSON(geojson);
               callback(trips, stations, weather, Factory.seattle);
@@ -92,6 +92,35 @@
 				});
 			});
 		}
+
+    // Takes a station object and adds functions for 
+    function addStationTracking(stations) {
+        
+        stations.forEach(function(d) {
+          d.count = 0;
+        });
+
+        stations.addBike = function(terminal) {
+          stations.forEach(function(s) {
+            if (s.terminal === terminal) s.count++;
+          });
+        };
+
+        stations.removeBike = function(terminal) {
+          stations.forEach(function(s) {
+            if (s.terminal === terminal) s.count--;
+          });
+        };
+
+        stations.resetBikes = function() {
+          stations.forEach(function(s) {
+            d.count=0;
+          });
+        };
+
+        return stations;
+
+    }
 
     // Make a query using the internal QUERY object which is bound
     // To ui controls in the main view
