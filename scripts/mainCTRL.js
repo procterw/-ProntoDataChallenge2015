@@ -19,8 +19,8 @@
 		var vm = this;
 
     // Default options
-		vm.timeStart;
-    vm.timeStop;
+		vm.timeStart = new Date(2015, 7, 1);
+    vm.timeStop = new Date(2015, 7, 8);;
     vm.currentTime = 0;
     vm.minpersec = 30;
 
@@ -30,6 +30,7 @@
     vm.query = DataFactory.query;
 
     vm.animateQuery = animateQuery;
+    vm.animateTimespan = animateTimespan;
 
     vm.formatTime = formatTime;
 
@@ -55,6 +56,17 @@
 
     // Is an animation currently running? 
     var activeAnimation
+
+
+
+
+
+
+
+
+
+
+
 
     function animateQuery() {
 
@@ -113,57 +125,33 @@
 
     }
 
+
+
+
+
+
+
+
     // Run an animation between two timesteps
-    function animateRange() {
+    function animateTimespan() {
 
-      var t1 = vm.timeStart,
-      t2 = vm.timeStop;
+      vm.stop(); // stp any active animations
 
-      var dataSubset = DataFactory.filterByTimeRange(DataFactory.trips, t1, t2);
+      MapFactory.bikeQueue.clear(); // clear bikes from map and memory
 
-      // Keep track of the intervals starting time
-      var startTimer = new Date();
+      var dataSubset = DataFactory.queryTimespan(vm.timeStart, vm.timeStop);
 
-      // The time of the current frame relative to t1 and t2
-      var frameTime = +t1;
-
-      MapFactory.setSunScales(DataFactory.getSunriseSunset(new Date((t1.getTime()+t2.getTime())/2)));
-
-      // Animation loop
-      activeAnimation = setInterval(function() {
-
-        // How much time has gone by?
-        var dt = new Date() - startTimer;
-
-        // How many "bike minutes" have passed
-        var elapsedMinutes = vm.minpersec * (dt / 1000);
-
-        // Update the frame time
-        vm.currentTime = new Date(+t1 + (elapsedMinutes * 1000 * 60));
-        $scope.$apply();
-
-        var activeBikes = DataFactory.findTripStations(DataFactory.getDataBefore(dataSubset, vm.currentTime));
-        dataSubset = DataFactory.getDataAfter(dataSubset, vm.currentTime);
-
-        MapFactory.bikeQueue.addData(activeBikes);
-        MapFactory.bikeQueue.getPositions(DataFactory.getCurrentLocation, vm.currentTime);
-        MapFactory.bikeQueue.render();
-
-        // Get time in minutes for scales
-        var timeInMin = vm.currentTime.getHours() * 60 + vm.currentTime.getMinutes();
-
-        // Set background color
-        // vm.waterColor = MapFactory.waterScale(timeInMin);
-
-        // MapFactory.setTime(timeInMin);
-
-        MapFactory.drawMap();
-
-        if (vm.currentTime > +t2) clearInterval(activeAnimation);
-
-      }, 50);
+      var statusSubset = DataFactory.queryStatuses(vm.timeStart, vm.timeStop);
+      console.log(statusSubset)
 
   	}
+
+
+
+
+
+
+
 
     // Formates a "minute" time into hours and minutes
     function formatTime(time) {

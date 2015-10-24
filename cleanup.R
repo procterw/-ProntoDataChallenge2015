@@ -22,27 +22,33 @@ convertToUnixTime <- function(time, format="%m-%d-%Y %H:%M:%S") {
 ####################
 
 # For this project we don't need any of this data
-unwantedColnames <- c("trip_id", "to_station_name","from_station_name","bikeid","birthyear")
+unwantedColnames <- c("trip_id", "to_station_name","from_station_name","bikeid","tripduration")
 trips <- trips[!(names(trips) %in% unwantedColnames)]
 
 # These names can be shortened
-trips$usertype <- gsub("Annual Member", "an", trips$usertype)
-trips$usertype <- gsub("Short-Term Pass Holder", "st", trips$usertype)
+trips$usertype <- gsub("Annual Member", "A", trips$usertype)
+trips$usertype <- gsub("Short-Term Pass Holder", "O", trips$usertype)
 trips$gender <- gsub("Male", "M", trips$gender)
 trips$gender <- gsub("Female", "F", trips$gender)
 trips$gender <- gsub("Other", "O", trips$gender)
 
+stationNames <- as.character(stations$terminal)
+trips$from_station_id <- match(trips$from_station_id, stationNames)
+trips$to_station_id <- match(trips$to_station_id, stationNames)
+
 since1970 <- as.POSIXct("1970-1-1 00:00:00")
 
-trips$starttime <- unlist(lapply(trips$startime, convertToUnixTime))
-trips$stoptime <- unlist(lapply(trips$stoptime, convertToUnixTime))
-trips$tripduration <- trips$tripduration / 60
+trips$starttime <- as.numeric(difftime(as.POSIXct(as.character(trips$starttime), format="%m/%d/%Y %H:%M"), 
+                 since1970, units="mins"))
+
+trips$stoptime <- as.numeric(difftime(as.POSIXct(as.character(trips$stoptime), format="%m/%d/%Y %H:%M"), 
+                            since1970, units="mins"))
 
 write.csv(trips, "clean_data/trips.csv", row.names=FALSE)
 
 
 ####################
-### TRIPS cleanup
+### WEATHER cleanup
 ####################
 
 wantedColnames <- c("Date", "Mean_Temperature_F","Max_Wind_Speed_MPH","Mean_Wind_Speed_MPH","Events","Precipitation_In")
@@ -83,12 +89,12 @@ write.csv(sunrisesunset, "clean_data/sunriset.csv", row.names=FALSE)
 
 
 
+
+
+
 #####################
 ### STATUSES CLEANUP
 #####################
-
-# Remove unnecessary rows
-statuses <- statuses[,-c(3,4,5)]
 
 # Convert unique times to POSIXct
 statusTimes <- as.POSIXct(unique(statuses$time), format="%Y-%m-%d %H:%M:%S")
@@ -118,6 +124,10 @@ statusSubset <- statuses[which(as.character(statuses$time) %in% as.character(rea
 # Replace the time with the corresponding rounded time
 statusSubset$time <- roundedTimes[match(as.character(statusSubset$time), as.character(realTimes))]
 
+# TODO is this the right approach?
+# Combine available bikes and bikes_blocked
+statusSubset$bikes <- statusSubset$bikes_available + statusSubset$bikes_blocked
+
 # New data frame which shows missing values for stations
 # instead of not including them
 fullStatuses <- expand.grid(1:max(statuses$station_id),roundedTimes)
@@ -126,6 +136,7 @@ names(fullStatuses) <- c("station_id", "time")
 # Merge the two dataframes. This will fill in missing values for
 # statusSubset
 fullStatuses <- merge(fullStatuses, statusSubset, all.x=TRUE)
+fullStatuses <- fullStatuses[with(fullStatuses, order(time, station_id)),]
 
 # Write to csv
-write.csv(fullStatuses$bikes_available, "clean_data/statuses.csv", row.names=FALSE)
+write.csv(fullStatuses$bikes, "clean_data/statuses.csv", row.names=FALSE)

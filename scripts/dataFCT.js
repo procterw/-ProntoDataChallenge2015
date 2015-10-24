@@ -27,7 +27,11 @@
 		Factory.getCurrentLocation = getCurrentLocation;
     Factory.findTripStations = findTripStations;
 
+    Factory.queryTimespan = queryTimespan;
+
     Factory.getTimeInMinutes = getTimeInMinutes;
+
+    Factory.queryStatuses = queryStatuses
 
     Factory.getDataBefore = getDataBefore;
     Factory.getDataAfter = getDataAfter;
@@ -84,14 +88,14 @@
 				d3.csv("clean_data/stations.csv", function(stations) {
 					d3.csv("clean_data/weather.csv", function(weather) {
 						d3.json("clean_data/Neighborhoods.json", function(error, geojson) {
-              Factory.trips = cleanTripData(trips);
-              Factory.stations = addStationTracking(stations);
-              Factory.weather = cleanWeatherData(weather);
-              Factory.seattle = unpackTopoJSON(geojson);
-              callback(trips, stations, weather, Factory.seattle);
-              $http.get("clean_data/statuses.txt").then(function(result) {
-                statusString = result.data;
-                getStatuses(new Date(2015, 6, 1), new Date(2015, 6, 8))
+              d3.csv("clean_data/statuses.csv", function(statuses) {
+                statusString = statuses;
+                cleanStatuses(statuses);
+                Factory.trips = cleanTripData(trips, stations);
+                Factory.stations = addStationTracking(stations);
+                Factory.weather = cleanWeatherData(weather);
+                Factory.seattle = unpackTopoJSON(geojson);
+                callback(trips, stations, weather, Factory.seattle);
               })
 						});
 					});
@@ -101,32 +105,32 @@
 
     // Takes a station object and adds functions for 
     function addStationTracking(stations) {
-        
-        stations.forEach(function(d) {
-          d.arrivals = 0;
-          d.departures = 0;
+      
+      stations.forEach(function(d) {
+        d.arrivals = 0;
+        d.departures = 0;
+      });
+
+      stations.addBike = function(terminal) {
+        stations.forEach(function(s) {
+          if (s.terminal === terminal) s.arrivals++;
         });
+      };
 
-        stations.addBike = function(terminal) {
-          stations.forEach(function(s) {
-            if (s.terminal === terminal) s.arrivals++;
-          });
-        };
+      stations.removeBike = function(terminal) {
+        stations.forEach(function(s) {
+          if (s.terminal === terminal) s.departures++;
+        });
+      };
 
-        stations.removeBike = function(terminal) {
-          stations.forEach(function(s) {
-            if (s.terminal === terminal) s.departures++;
-          });
-        };
+      stations.resetBikes = function() {
+        stations.forEach(function(s) {
+          d.arrivals=0;
+          d.departures=0;
+        });
+      };
 
-        stations.resetBikes = function() {
-          stations.forEach(function(s) {
-            d.arrivals=0;
-            d.departures=0;
-          });
-        };
-
-        return stations;
+      return stations;
 
     }
 
@@ -188,12 +192,28 @@
       return data;
     }
 
-    function cleanTripData(data) {
+    function cleanTripData(data, stations) {
+
+      var stationList = stations.map(function(d) {
+        return d.terminal;
+      });
+
       angular.forEach(data, function(d) {
+        d.to_station_id = stationList[+d.to_station_id - 1];
+        d.from_station_id = stationList[+d.from_station_id - 1];
         d.starttime = new Date((+d.starttime) * 60 * 1000 + timeShift);
         d.stoptime = new Date((+d.stoptime) * 60 * 1000 + timeShift);
       })
+
       return data;
+    }
+
+    function cleanStatuses(data) {
+
+      console.log(data);
+      for (var i=0; i < data.length/67; i++) {
+
+      } 
     }
 
     function unpackTopoJSON(data) {
@@ -219,6 +239,24 @@
 
       return unpacked;
 
+    }
+
+    function queryTimespan(time1, time2) {
+      console.log(time1, time2)
+      return Factory.trips.filter(function(d) {
+        return (+d.starttime > time1 && +d.starttime < time2);
+      });
+    }
+
+    function queryStatuses(time1, time2) {
+      // Statuses are organized in groups of 67 stations
+      // with 1 hour intervals starting at 2014-10-16
+      // First find the number of hours between
+      var starttime = new Date(2014, 10, 16);
+      var tdiff1 = (time1 - starttime) / (1000 * 60 * 60);
+      var tdiff2 = (time2 - starttime) / (1000 * 60 * 60);
+
+      return statusString.slice(tdiff1 * 67, tdiff2 * 67);
     }
 
 		function filterByTime(data, time) {
