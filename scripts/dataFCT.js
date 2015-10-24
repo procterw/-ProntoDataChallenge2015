@@ -75,6 +75,7 @@
     // four hour timeshift to apply to all dates
     var timeShift = -1000 * 60 * 60 * 4;
 
+    var statusString; // String of 2 digit statuses to parse
 
 		return Factory;
 
@@ -86,8 +87,12 @@
               Factory.trips = cleanTripData(trips);
               Factory.stations = addStationTracking(stations);
               Factory.weather = cleanWeatherData(weather);
-							Factory.seattle = unpackTopoJSON(geojson);
+              Factory.seattle = unpackTopoJSON(geojson);
               callback(trips, stations, weather, Factory.seattle);
+              $http.get("clean_data/statuses.txt").then(function(result) {
+                statusString = result.data;
+                getStatuses(new Date(2015, 6, 1), new Date(2015, 6, 8))
+              })
 						});
 					});
 				});
@@ -331,6 +336,11 @@
         return day.Date.getDate() == time.getDate() && day.Date.getMonth() === time.getMonth();
       })[0];
       return [correctDay.sunset, correctDay.sunrise];
+    }
+
+    // Parse the status string and return a usable object
+    function getStatuses(t1, t2) {
+      console.log(t1, t2)
     }
 
 	}

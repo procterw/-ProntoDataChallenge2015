@@ -362,7 +362,7 @@
 
 
 
-        // USAGE PLOT
+    //     // USAGE PLOT
 
 				// var a1 = (station.arrivals * 3) + 60;
     //     var a2 = (station.departures * 3) + 60;

@@ -11,9 +11,10 @@
 	angular.module("App")
 		.controller("Main", Main);
 
-	Main.$inject = ['$scope', 'DataFactory', 'MapFactory'];
+	Main.$inject = ['$scope', 'DataFactory', 'MapFactory', "$http"];
 
-	function Main($scope, DataFactory, MapFactory) {
+	function Main($scope, DataFactory, MapFactory, $http) {
+
 
 		var vm = this;
 

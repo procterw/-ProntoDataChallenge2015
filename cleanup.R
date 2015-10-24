@@ -80,3 +80,52 @@ sunrisesunset <- data.frame(date=strftime(sunrises$time, format="%Y-%m-%d"),
            sunset=strftime(sunsets$time, format="%H:%M:%S"))
 
 write.csv(sunrisesunset, "clean_data/sunriset.csv", row.names=FALSE)
+
+
+
+#####################
+### STATUSES CLEANUP
+#####################
+
+# Remove unnecessary rows
+statuses <- statuses[,-c(3,4,5)]
+
+# Convert unique times to POSIXct
+statusTimes <- as.POSIXct(unique(statuses$time), format="%Y-%m-%d %H:%M:%S")
+
+# Create an hourly sequence of dates
+d1 <- as.POSIXct("2014-10-16")
+d2 <- as.POSIXct("2015-10-12")
+hourlySeq <- seq(d1,d2,by="hour")
+
+# Merge the times and sort
+mergedTimes <- sort(c(statusTimes, hourlySeq))
+
+# Indices where our hourly mask is now
+hourlyMask <- which(mergedTimes %in% hourlySeq)
+
+# Only use hourly intervals that have actual times between them
+hourlyDiffs <- hourlyMask[which(diff(hourlyMask) > 1)]
+
+# The actual times and rounded times we'll be using
+realTimes <- mergedTimes[hourlyDiffs - 1]
+roundedTimes <- mergedTimes[hourlyDiffs]
+
+# Now that we have the closest times, subset the original statuses with
+# those times
+statusSubset <- statuses[which(as.character(statuses$time) %in% as.character(realTimes)),]
+
+# Replace the time with the corresponding rounded time
+statusSubset$time <- roundedTimes[match(as.character(statusSubset$time), as.character(realTimes))]
+
+# New data frame which shows missing values for stations
+# instead of not including them
+fullStatuses <- expand.grid(1:max(statuses$station_id),roundedTimes)
+names(fullStatuses) <- c("station_id", "time")
+
+# Merge the two dataframes. This will fill in missing values for
+# statusSubset
+fullStatuses <- merge(fullStatuses, statusSubset, all.x=TRUE)
+
+# Write to csv
+write.csv(fullStatuses$bikes_available, "clean_data/statuses.csv", row.names=FALSE)
