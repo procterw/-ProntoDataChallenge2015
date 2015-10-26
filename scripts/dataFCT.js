@@ -24,7 +24,6 @@
 		Factory.filterByTime = filterByTime;
     Factory.filterByTimeRange = filterByTimeRange;
 		Factory.getStationCoords = getStationCoords;
-		Factory.getCurrentLocation = getCurrentLocation;
     Factory.findTripStations = findTripStations;
 
     Factory.queryTimespan = queryTimespan;
@@ -351,51 +350,6 @@
       }
       return null; // Is this bad practice?
     }
-
-		function getCurrentLocation(trip, time) {
-
-      if (trip.stoptime_min < time) {
-
-        return [trip.stopCoords[1], trip.stopCoords[0], 2*Math.PI]
-
-      } else if (trip.from_station_id === trip.to_station_id) {
-
-				var t1 = +trip.starttime_min; // time in minutes
-				var t2 = +trip.stoptime_min; // time in minutes
-				var dt = time - t1;
-
-				var r = 0.0015;
-
-				// How far around?
-				var theta = Math.PI * 2 * (dt / (t2 - t1));
-
-				return [
-					trip.startCoords[1] + (Math.cos(theta) * r),
-					trip.startCoords[0] + (Math.sin(theta) * r),
-          theta
-				]
-
-			} else {
-
-				var x1 = trip.startCoords[1];
-				var y1 = trip.startCoords[0];
-				var x2 = trip.stopCoords[1];
-				var y2 = trip.stopCoords[0];
-				var t1 = +trip.starttime_min; // time in minutes
-				var t2 = +trip.stoptime_min; // time in minutes
-				var dt = time - t1;
-
-				var rateX = (x2 - x1) / (t2 - t1); 
-				var rateY = (y2 - y1) / (t2 - t1);
-
-				return [
-					(x1 + dt * rateX),
-					(y1 + dt * rateY) 
-				]
-
-			}
-
-		}
 
     function findTripStations(trips, time) {
 

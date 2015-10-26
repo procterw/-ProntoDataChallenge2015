@@ -1,488 +1,574 @@
-
-
 // ~~~~~~~~~~~~~~~~~~~~~~~~ //
 // Map Factory             //
 // ~~~~~~~~~~~~~~~~~~~~~~~~ //
-
 // Functions for rendering the map components
-
 (function() {
 
-	angular.module("App")
-		.factory("MapFactory", MapFactory);
-
-	MapFactory.$inject = [];
-
-	function MapFactory() {
-
-		var Factory = {};
-
-		var _currentTime = 0;
-
-		Factory.setTime = function(time) { _currentTime = time; }
-
-		Factory.seattle = d3.select("#mapCanvas");
-		Factory.stations = d3.select("#stationCanvas");
-		Factory.bikes = d3.select("#bikeCanvas");
-
-		Factory.resize = resize;
-		Factory.drawMap = drawMap;
-
-		Factory.drawBikes = drawBikes;
-		Factory.drawStations = drawStations;
-
-		Factory.setSunScales = setSunScales;
-		Factory.waterScale = d3.scale.linear();
-
-		// Minutes it takes a path to fade
-		var pathFadeTime = 60;
-		
-		// The Queue of bike positions to draw
-		Factory.bikeQueue = {
-			data: [],
-			posData: [],
-			addData: function(data) {
-				data.forEach(function(d) {
-					Factory.stations.datum().removeBike(d.from_station_id)
-				});
-				this.data = this.data.concat(data);
-			},
-			getPositions: function(getCurrentLocation, time) {
-				this.data.forEach(function(d) {
-					if ((time - d.stoptime_min) >= pathFadeTime) {
-						Factory.stations.datum().addBike(d.to_station_id)
-					}
-				});
-				// Filter out data that is too old
-				this.data = this.data.filter(function(d) {
-					return (time - d.stoptime_min) < pathFadeTime;
-				});
-				this.posData = this.data.map(function(d) {
-					var current = getCurrentLocation(d, time);
-					var sameStation = d.from_station_id === d.to_station_id;
-					return {
-						current: [xScale(current[0]), yScale(current[1]), current[2]],
-						start: [xScale(d.startCoords[1]), yScale(d.startCoords[0])],
-						sameStation: sameStation,
-						opacity: time > d.stoptime_min ? (pathFadeTime + d.stoptime_min - time) / pathFadeTime : 1
-					}
-				});
-			},
-			clear: function() {
-				this.data = [];
-				this.postData = [];
-				this.render();
-			},
-			render: drawBikes
-		}
-
-		// Initialize scales
-		var xScale = d3.scale.linear();
-		var yScale = d3.scale.linear();
-
-		var waterScale = d3.scale.linear();
-		var landScale = d3.scale.linear();
-		var borderScale = d3.scale.linear();
-		var pathScale = d3.scale.linear();
-    var stationScale = d3.scale.linear();
-
-		// d3 zoom behavior
-		Factory.stations.call(d3.behavior.zoom()
-			.scaleExtent([0.5, 2])
-			.on("zoom", zoom))
-
-		// Keep track of translations and zooms
-		var translation = [0,0];
-		var zoomLevel = 1;
-		var retinaZoom = 1;
-
-		// Keep track of width and height
-		var width;
-		var height;
-
-
-    // Initialize with dummy values so the initial canvas has something
-    // to use for fill and stroke values
-    setSunScales([[7,0],[18,0]]);
-
-		return Factory;
-
-		// Set color scales to indicate time of day
-		function setSunScales(sunriset) {
-
-			var sunrise = sunriset[1];
-			var sunset = sunriset[0];
-			sunrise = sunrise[0] * 60 + sunrise[1]; // which minute of day is it
-			sunset = sunset[0] * 60 + sunset[1]; // which minute of day is it
-
-			var sunDomainLong = [0, sunrise - 10, sunrise+10, sunset-10, sunset+10, (24*60)];
-			var sunDomainShort = [0, sunrise - 60, sunrise-10, sunset-60, sunset-10, (24*60)];
-
-			// Set domains with new sun data
-			Factory.waterScale.domain(sunDomainLong);
-			landScale.domain(sunDomainLong);
-			borderScale.domain(sunDomainLong);
-			pathScale.domain(sunDomainShort);
-      stationScale.domain(sunDomainLong);
-
-			// Background color
-			var waterNight = "#3A4851";
-			var waterDay = "#BAD3D0";
-
-			// Map fill
-			var landNight = "#3F3C3A";
-			var landDay = "#E2DCD5";
-
-			// Map borders
-			var borderNight = "#454545";
-			var borderDay = "#F7F7F7";
-
-			// Bike paths
-			var pathNight = "#F2EABD";
-			var pathDay = "#4B756D";
-
-      var stationNight = "#666";
-      var stationDay = "#FFF";
-
-			// Set scale ranges with specified colors
-			Factory.waterScale.range([waterNight, waterNight, waterDay, waterDay, waterDay, waterNight]);
-			landScale.range([landNight, landNight, landDay, landDay, landDay, landNight]);
-			borderScale.range([borderNight, borderNight, borderDay, borderDay, borderDay, borderNight]);
-			pathScale.range([pathNight, pathNight, pathDay, pathDay, pathDay, pathNight]);
-      stationScale.range([stationNight, stationNight, stationDay, stationDay, stationDay, stationNight]);
-
-		}
-
-
-		// Resize behavior called when window size changes.
-		function resize() {
+  angular.module("App")
+    .factory("MapFactory", MapFactory);
 
-			// Find retina zoom level
-			var devicePixelRatio = window.devicePixelRatio || 1
-			var ctx = Factory.bikes.node().getContext('2d');
-	    var backingStoreRatio = ctx.webkitBackingStorePixelRatio ||
-      ctx.mozBackingStorePixelRatio ||
-      ctx.msBackingStorePixelRatio ||
-      ctx.oBackingStorePixelRatio ||
-      ctx.backingStorePixelRatio || 1
+  MapFactory.$inject = [];
 
-      // retinaZoom = 1;
-      retinaZoom = devicePixelRatio / backingStoreRatio;
+  function MapFactory() {
 
-      // zoomLevel = zoomLevel * retinaZoom;
+    var Factory = {};
 
-			// find new bounding box
-			var bbox = Factory.seattle.node().parentNode.getBoundingClientRect();
+    // var _currentTime = 0;
 
-			width = bbox.width * retinaZoom;
-			height = bbox.height * retinaZoom;
+    // Factory.setTime = function(time) { _currentTime = time; }
 
-			// Resize canvases
-			Factory.bikes.attr("width", width);
-			Factory.bikes.attr("height", height);
-			Factory.stations.attr("width", width);
-			Factory.stations.attr("height", height);
-			Factory.seattle.attr("width", width);
-			Factory.seattle.attr("height",height);
+    Factory.Water = new Water();
+    Factory.Map = new Map("#mapCanvas");
+    Factory.Stations = new Stations("#stationCanvas");
+    Factory.Bikes = new Bikes("#bikeCanvas");
 
-			Factory.bikes.style("width", width/retinaZoom + "px");
-			Factory.bikes.style("height", height/retinaZoom + "px");
-			Factory.stations.style("width", width/retinaZoom + "px");
-			Factory.stations.style("height", height/retinaZoom + "px");
-			Factory.seattle.style("width", width/retinaZoom + "px");
-			Factory.seattle.style("height", height/retinaZoom + "px");
 
-			// Update x and y scales with new domain and range.
-			// The domain has to change because we don't want it to scale down
-			// at small sizes
-			var screenScale = Math.min(250, width, height);
+    var transforms = {
+      zoom: 1,
+      translation: [0, 0]
+    };
 
-			// Always focus the map on this point when zoomed out?
-			var mapCenterX = -122.3215;
-			var mapCenterY = 47.63;
 
-			xScale
-				.domain([
-					mapCenterX - 0.016 * (width/screenScale) / retinaZoom,
-					mapCenterX + 0.016 * (width/screenScale) / retinaZoom
-					])
-				.range([0,width/retinaZoom]);
+    return Factory;
 
-			yScale
-				.domain([
-					mapCenterY - 0.011 * (height/screenScale) / retinaZoom,
-					mapCenterY + 0.011 * (height/screenScale) / retinaZoom
-					])
-				.range([height/retinaZoom,0]);
+    // Returns the scale for retina screens
+    function findRetina(ctx) {
 
-		}
+      // Find retina zoom level
+      var devicePixelRatio = window.devicePixelRatio || 1;
+      var backingStoreRatio = ctx.webkitBackingStorePixelRatio ||
+        ctx.mozBackingStorePixelRatio ||
+        ctx.msBackingStorePixelRatio ||
+        ctx.oBackingStorePixelRatio ||
+        ctx.backingStorePixelRatio || 1;
 
-		function drawBikes() {
+      return devicePixelRatio / backingStoreRatio;
 
-			var bikes = Factory.bikeQueue.posData;
+    }
 
-			// Get context, clear it, save it's state, then apply current
-			// translation and zoom
-			var ctx = Factory.bikes.node().getContext("2d");
-			ctx.clearRect(0, 0, width, height);
-			ctx.save()
-			ctx.translate(translation[0], translation[1]);
-			ctx.scale(zoomLevel * retinaZoom, zoomLevel * retinaZoom);
+    function makeXYScales(width, height, retina) {
 
-			ctx.strokeStyle = pathScale(_currentTime);
-			ctx.lineWidth=2;
+      var mapCenterX = -122.3215;
+      var mapCenterY = 47.63;
 
-			// Draw the fading lines
-			angular.forEach(bikes.filter(function(bike) {
-				return bike.opacity < 1;
-			}), function (bike) {
+      // Update x and y scales with new domain and range.
+      // The domain has to change because we don't want it to scale down
+      // at small sizes
+      var screenScale = Math.min(250, width, height);
 
-				// Each fading bike has a different opacity which is some fraction of 0.15
-				ctx.save();
-				ctx.globalAlpha = Math.round(100 * bike.opacity * 0.15) / 100;
-				ctx.beginPath();
+      var xScale = d3.scale.linear()
+        .domain([
+          mapCenterX - 0.016 * (width / screenScale) / retina,
+          mapCenterX + 0.016 * (width / screenScale) / retina
+        ])
+        .range([0, width / retina]);
 
-				if (bike.sameStation) {
+      var yScale = d3.scale.linear()
+        .domain([
+          mapCenterY - 0.011 * (height / screenScale) / retina,
+          mapCenterY + 0.011 * (height / screenScale) / retina
+        ])
+        .range([height / retina, 0]);
 
-					ctx.arc(bike.start[0],bike.start[1],14,-bike.current[2],0)
+      return {
+        x: xScale,
+        y: yScale
+      };
 
-				} else {
+    }
 
-					ctx.moveTo(bike.start[0], bike.start[1]);
-					ctx.lineTo(bike.current[0],bike.current[1]);
+    function makeSunScale(sunriset, night, day) {
+      var sunrise = sunriset[1];
+      var sunset = sunriset[0];
+      sunrise = sunrise[0] * 60 + sunrise[1]; // which minute of day is it
+      sunset = sunset[0] * 60 + sunset[1]; // which minute of day is it
+      return d3.scale.linear()
+        .domain([0, sunrise - 30, sunrise + 30, sunset - 30, sunset + 30, (25 * 60)])
+        .range([night, night, day, day, night, night]);
+    }
 
-				}
 
-				ctx.stroke();
-				ctx.restore();
 
-			});
+    function Water() {
 
-			ctx.strokeStyle = pathScale(_currentTime);
+      var Water = this;
 
-			// Active bikes always have opacity 0.15
-			ctx.globalAlpha = 0.15;
+      var _fillScale;
 
-			// Active bike lines
-			angular.forEach(bikes.filter(function(bike) {
-				return bike.opacity === 1 && bike.sameStation;
-			}), function (bike) {
+      Water.setColorScale = setColorScale;
+      Water.getColor = getColor;
 
-				ctx.beginPath();
-				ctx.arc(bike.start[0],bike.start[1],14,-bike.current[2],0)
+      function setColorScale(sunriset) {
+        // sunriset, night color, day color
+        _fillScale = makeSunScale(sunriset, "#3A4851", "#BAD3D0");
+      }
 
-			});
+      function getColor(time) {
+        return _fillScale(time);
+      }
 
-			ctx.stroke();
+    }
 
-			// Active bike lines
-			angular.forEach(bikes.filter(function(bike) {
-				return bike.opacity === 1 && !bike.sameStation;
-			}), function (bike) {
 
-				ctx.moveTo(bike.start[0], bike.start[1]);
-				ctx.lineTo(bike.current[0],bike.current[1]);
 
-			});
+    function getCurrentLocation(trip, time) {
 
-			// Draw all active lines
-			ctx.stroke();
+      var t1, t2, dt;
 
-			ctx.restore();
+      if (trip.stoptime_min < time) {
 
-		}
+        return [trip.stopCoords[1], trip.stopCoords[0], 2 * Math.PI];
 
+      } else if (trip.from_station_id === trip.to_station_id) {
 
-		function drawStations(stations, plotType) {
+        t1 = +trip.starttime_min; // time in minutes
+        t2 = +trip.stoptime_min; // time in minutes
+        dt = time - t1;
 
-			// Either store the new data
-			// OR pull it from memory
-			if (stations) {
-				Factory.stations.datum(stations)
-			} else {
-				stations = Factory.stations.datum();
-			}
+        var r = 0.0015;
 
-			// Get context, clear it, save it's state, then apply current
-			// translation and zoom
-			var ctx = Factory.stations.node().getContext("2d");
-			ctx.clearRect(0, 0, width, height);
-			ctx.save()
-			ctx.translate(translation[0], translation[1]);
-			ctx.scale(zoomLevel * retinaZoom, zoomLevel * retinaZoom);
+        // How far around?
+        var theta = Math.PI * 2 * (dt / (t2 - t1));
 
-      ctx.lineWidth=2;
-      ctx.strokeStyle = landScale(_currentTime);
-      ctx.globalAlpha = 0.8;
+        return [
+          trip.startCoords[1] + (Math.cos(theta) * r),
+          trip.startCoords[0] + (Math.sin(theta) * r),
+          theta
+        ];
 
-      var T = Math.PI * 2;
+      } else {
 
-			angular.forEach(stations, function(station) {
+        var x1 = trip.startCoords[1];
+        var y1 = trip.startCoords[0];
+        var x2 = trip.stopCoords[1];
+        var y2 = trip.stopCoords[0];
+        t1 = +trip.starttime_min; // time in minutes
+        t2 = +trip.stoptime_min; // time in minutes
+        dt = time - t1;
 
-        var x = xScale(+station.long);
-        var y = yScale(+station.lat);
+        var rateX = (x2 - x1) / (t2 - t1);
+        var rateY = (y2 - y1) / (t2 - t1);
 
+        return [
+          (x1 + dt * rateX), (y1 + dt * rateY)
+        ];
 
-        function bikeCountPlot() {
+      }
 
-        	var r = 9;
+    }
 
-	        ctx.beginPath();
-	        ctx.arc(x,y,r+1,0,T);
-	        ctx.fillStyle = stationScale(_currentTime);
-	        ctx.fill();
-	        ctx.stroke();
 
-	        var ndocks = +station.dockcount * 2; // how many available docks
-	        var bikes = station.bikeCount;
-	        var theta1 = 0;
-	        var theta2 = (bikes/ndocks) * T;
 
-	        ctx.beginPath();
-          ctx.fillStyle = "#5ECCA7";
-          ctx.arc(x,y,8,theta1,theta2, false);
-          ctx.lineTo(x,y);
-	        ctx.fill();
+
+    function Map(id) {
+
+      var Map = this;
+
+      var _canvas = d3.select(id);
+
+      // Internal coordinates data
+      var _coordinates = [];
+      var _fillScale; // scale for 
+      var _strokeScale; // scale for 
+      var _xScale; // coordinates -> xy
+      var _yScale; // coordinates -> xy
+      var _currentTime = 0; // current time in minutes
+      var _ctx = _canvas.node().getContext('2d');
+      var _retina = findRetina(_ctx); // 1 for non retina, 1+ for retina
+
+      var _width, _height;
+
+      Map.setCoordinates = setCoordinates;
+      Map.setColorScales = setColorScales;
+      Map.setTime = setTime;
+      Map.resize = resize;
+
+      Map.render = render;
+
+      return Map;
+
+      function setCoordinates(coords) {
+        _coordinates = coords;
+      }
+
+      function setColorScales(sunriset) {
+        // sunriset, night color, day color
+        _fillScale = makeSunScale(sunriset, "#3F3C3A", "#E2DCD5");
+        _strokeScale = makeSunScale(sunriset, "#454545", "#F7F7F7");
+      }
+
+      function setTime(time) {
+        _currentTime = time;
+      }
+
+      function resize() {
+
+        // find new bounding box
+        var bbox = _canvas.node().parentNode.getBoundingClientRect();
+
+        _width = bbox.width * _retina;
+        _height = bbox.height * _retina;
+
+        // Resize canvases
+        _canvas.attr("width", _width);
+        _canvas.attr("height", _height);
+
+        _canvas.style("width", _width / _retina + "px");
+        _canvas.style("height", _height / _retina + "px");
+
+        var scale = makeXYScales(_width, _height, _retina);
+
+        _xScale = scale.x;
+        _yScale = scale.y;
+
+
+      }
+
+      function clear() {
+        _ctx.clearRect(0, 0, _width, _height);
+      }
+
+      function render() {
+
+        // Clear context save it's state, then apply current
+        // translation and zoom
+        clear();
+        _ctx.save();
+        _ctx.translate(transforms.translation[0], transforms.translation[1]);
+        _ctx.scale(transforms.zoom * _retina, transforms.zoom * _retina);
+
+        // Apply style attributes and draw polygons
+        _ctx.fillStyle = _fillScale(_currentTime % (24 * 60));
+        _ctx.strokeStyle = _strokeScale(_currentTime % (24 * 60));
+        _ctx.lineWidth = 1;
+
+        // ctx.beginPath();
+        // For each polygon, move the line path and continue drawing until
+        // that poylgon is finished
+        for (var i = 0; i < _coordinates.length; i++) {
+
+          var polygon = _coordinates[i];
+          _ctx.beginPath();
+          _ctx.moveTo(_xScale(polygon[0].x), _yScale(polygon[0].y));
+
+          for (var k = 1; k < polygon.length; k++) {
+            _ctx.lineTo(_xScale(polygon[k].x), _yScale(polygon[k].y));
+          }
+
+          _ctx.fill();
+          _ctx.stroke();
 
         }
 
-        bikeCountPlot();
+        // Restore previous state
+        _ctx.restore();
 
-        // Bar charts showing how many bikes have been
-        // lost or added since the start
-        function netDifferencePlot() {
-	        
-	        var r = 9;
-
-	        ctx.beginPath();
-	        ctx.arc(x,y,r+1,0,T);
-	        ctx.fillStyle = stationScale(_currentTime);
-	        ctx.fill();
-	        ctx.stroke();
-
-	        var ndocks = +station.dockcount * 2; // how many available docks
-	       
-	        var diff = Math.abs(station.arrivals - station.departures); 
-	        var theta1 = T / 4; // Start angle
-	        var theta2;
-
-	        ctx.beginPath();
-
-	        // Clockwise pie chart
-	        if (station.arrivals > station.departures) {
-
-	          theta2 = theta1 + Math.min(T, T / ndocks) * diff;
-	          ctx.fillStyle = "#5ECCA7";
-	          ctx.arc(x,y,8,theta1,theta2, false);
-
-	        // Counter-clockwise pie chart
-	        } else if (station.arrivals < station.departures) {
-
-	          theta2 = theta1 + Math.min(T, T / ndocks) * diff;
-	          ctx.fillStyle = "#E6786C";
-	          ctx.arc(x,y,8,theta1,theta2, false);
-
-	        } 
-
-	        ctx.lineTo(x,y);
-	        ctx.fill();
-
-	      }
+      }
 
 
-        // Two half circles which show total arrivals and departures
-        function usagePlot() {
-
-					var a1 = (station.arrivals * 3) + 60;
-	        var a2 = (station.departures * 3) + 60;
-					
-	        var r1 = Math.sqrt(2 * a1 / Math.PI)
-	        var r2 = Math.sqrt(2 * a2 / Math.PI)
-
-	        var T = Math.PI * 2;
-
-					// Draw circles
-					ctx.beginPath();
-	        ctx.fillStyle = "#D68950";
-					ctx.arc(x,y,r1,T/4, 3 * T/4);
-	        ctx.fill();
-	        ctx.stroke();
-					
-	        ctx.beginPath();
-	        ctx.fillStyle = "#5BC7A3";
-	        ctx.arc(x,y,r2,3 * T/4,5 * T/4);
-	        ctx.fill();
-	        ctx.stroke();
-
-    		}
-        
-
-			});
-
-			// Restore previous state
-			ctx.restore();
-
-		}
-
-		function drawMap(polygons) {
-
-			// Either store the new data
-			// OR pull it from memory
-			if (polygons) {
-				Factory.seattle.datum(polygons);
-			} else {
-				polygons = Factory.seattle.datum();
-			}
-
-			// Get context, clear it, save it's state, then apply current
-			// translation and zoom
-			var ctx = Factory.seattle.node().getContext('2d');
-			ctx.clearRect(0, 0, width, height);
-			ctx.save()
-			ctx.translate(translation[0], translation[1]);
-			ctx.scale(zoomLevel * retinaZoom, zoomLevel * retinaZoom);
-
-			// Apply style attributes and draw polygons
-			ctx.fillStyle = landScale(_currentTime);
-			ctx.strokeStyle = borderScale(_currentTime);
-			ctx.lineWidth = 1;
-			
-			// ctx.beginPath();
-			// For each polygon, move the line path and continue drawing until
-			// that poylgon is finished
-			for (var i=0; i<polygons.length; i++) {
-				var polygon = polygons[i];
-				ctx.beginPath();
-				ctx.moveTo(xScale(polygon[0].x), yScale(polygon[0].y));
-				for (var k=1; k<polygon.length; k++) {
-					ctx.lineTo(xScale(polygon[k].x), yScale(polygon[k].y));
-				}
-				ctx.fill();
-				ctx.stroke();
-			}
-
-			// Restore previous state
-			ctx.restore();
-
-		}
-
-		// When zoomed everything has to be redrawn
-		function zoom() {
-
-			// Update translation and zoom
-			translation = d3.event.translate;
-			zoomLevel = d3.event.scale;
-
-			drawMap();
-			drawStations();
-			drawBikes();
-
-		}
+    }
 
 
 
 
-	}
+    function Stations(id) {
+
+      var Stations = this;
+
+      var _canvas = d3.select(id);
+      _canvas.call(d3.behavior.zoom()
+        .scaleExtent([0.5, 2])
+        .on("zoom", zoom));
+
+      // Internal coordinates data
+      var _coordinates = [];
+      var _fillScale; // scale for
+      var _strokeScale;
+      var _xScale; // coordinates -> xy
+      var _yScale; // coordinates -> xy
+      var _currentTime = 0; // current time in minutes
+      var _ctx = _canvas.node().getContext('2d');
+      var _retina = findRetina(_ctx); // 1 for non retina, 1+ for retina
+
+      var _width, _height;
+
+      Stations.setCoordinates = setCoordinates;
+      Stations.setColorScale = setColorScale;
+      Stations.setTime = setTime;
+      Stations.resize = resize;
+
+      Stations.render = render;
+
+      return Stations;
+
+      function setCoordinates(coords) {
+        _coordinates = coords;
+      }
+
+      function setColorScale(sunriset) {
+        // sunriset, night color, day color
+        _fillScale = makeSunScale(sunriset, "#666", "#FFF");
+        _strokeScale = makeSunScale(sunriset, "#3F3C3A", "#E2DCD5");
+      }
+
+      function setTime(time) {
+        _currentTime = time;
+      }
+
+      // Takes ride data and uses it to add and remove 
+      // counts
+      // function updateCounts(data) {
+      //   angular.forEach(data, function(d) {
+      //     _coordinates.removeBike(d.from_station_id);
+      //     if ((time - d.stoptime_min) >= pathFadeTime) {
+      //       _coordinates.addBike(d.to_station_id)
+      //     }
+      //   });
+      // }
+
+      function resize() {
+
+        // find new bounding box
+        var bbox = _canvas.node().parentNode.getBoundingClientRect();
+
+        _width = bbox.width * _retina;
+        _height = bbox.height * _retina;
+
+        // Resize canvases
+        _canvas.attr("width", _width);
+        _canvas.attr("height", _height);
+
+        _canvas.style("width", _width / _retina + "px");
+        _canvas.style("height", _height / _retina + "px");
+
+        var scale = makeXYScales(_width, _height, _retina);
+
+        _xScale = scale.x;
+        _yScale = scale.y;
+
+
+      }
+
+      function zoom() {
+        transforms.translation = d3.event.translate;
+        transforms.zoom = d3.event.scale;
+        render();
+        Factory.Map.render();
+      }
+
+      function clear() {
+        _ctx.clearRect(0, 0, _width, _height);
+      }
+
+      function render() {
+
+        clear();
+        _ctx.save();
+        _ctx.translate(transforms.translation[0], transforms.translation[1]);
+        _ctx.scale(transforms.zoom * _retina, transforms.zoom * _retina);
+
+        // Math constants
+        var r = 8;
+        var T = 2 * Math.PI;
+
+        _ctx.lineWidth = 2;
+        _ctx.strokeStyle = _strokeScale(_currentTime);
+
+        for (var i = 0; i < _coordinates.length; i++) {
+
+          var station = _coordinates[i];
+
+          var x = _xScale(+station.long);
+          var y = _yScale(+station.lat);
+
+          _ctx.beginPath();
+          _ctx.arc(x, y, r + 1, 0, T);
+          _ctx.fillStyle = _fillScale(_currentTime);
+          _ctx.fill();
+          _ctx.stroke();
+
+        }
+
+        // Restore previous state
+        _ctx.restore();
+
+
+      }
+
+
+    }
+
+
+
+
+    function Bikes(id) {
+
+      var Bikes = this;
+
+      var _canvas = d3.select(id);
+
+      // Internal coordinates data
+      var _rawData = [];
+      var _positionData = [];
+      var _strokeScale;
+      var _xScale; // coordinates -> xy
+      var _yScale; // coordinates -> xy
+      var _currentTime = 0; // current time in minutes
+      var _ctx = _canvas.node().getContext('2d');
+      var _retina = findRetina(_ctx); // 1 for non retina, 1+ for retina
+
+      var _width, _height;
+
+      Bikes.addData = addData;
+      Bikes.setColorScale = setColorScale;
+      Bikes.setTime = setTime;
+      Bikes.resize = resize;
+      Bikes.reset = reset;
+
+      Bikes.render = render;
+
+      return Bikes;
+
+      function addData(data) {
+        // Factory.Stations.updateCounts(data);
+        _rawData = _rawData.concat(data);
+        getPositions();
+      }
+
+      // Converts raw data to position data
+      function getPositions() {
+
+        var pathFadeTime = 60;
+
+        // Filter out data that is too old
+        _rawData = _rawData.filter(function(d) {
+          return (_currentTime - d.stoptime_min) < pathFadeTime;
+        });
+
+        _positionData = _rawData.map(function(d) {
+          var current = getCurrentLocation(d, _currentTime);
+          var sameStation = d.from_station_id === d.to_station_id;
+          return {
+            current: [_xScale(current[0]), _yScale(current[1]), current[2]],
+            start: [_xScale(d.startCoords[1]), _yScale(d.startCoords[0])],
+            sameStation: sameStation,
+            opacity: _currentTime > d.stoptime_min ? (pathFadeTime + d.stoptime_min - _currentTime) / pathFadeTime : 1
+          };
+        });
+
+      }
+
+      function setColorScale(sunriset) {
+        // sunriset, night color, day color
+        _strokeScale = makeSunScale(sunriset, "#F2EABD", "#4B756D");
+      }
+
+      function setTime(time) {
+        _currentTime = time;
+      }
+
+      function resize() {
+
+        // find new bounding box
+        var bbox = _canvas.node().parentNode.getBoundingClientRect();
+
+        _width = bbox.width * _retina;
+        _height = bbox.height * _retina;
+
+        // Resize canvases
+        _canvas.attr("width", _width);
+        _canvas.attr("height", _height);
+
+        _canvas.style("width", _width / _retina + "px");
+        _canvas.style("height", _height / _retina + "px");
+
+        var scale = makeXYScales(_width, _height, _retina);
+
+        _xScale = scale.x;
+        _yScale = scale.y;
+
+      }
+
+      function reset() {
+        clear();
+        _rawData = [];
+        _positionData = [];
+      }
+
+      function clear() {
+        _ctx.clearRect(0, 0, _width, _height);
+      }
+
+      function render() {
+
+        clear();
+        _ctx.save();
+        _ctx.translate(transforms.translation[0], transforms.translation[1]);
+        _ctx.scale(transforms.zoom * _retina, transforms.zoom * _retina);
+
+        _ctx.strokeStyle = _strokeScale(_currentTime);
+        _ctx.lineWidth = 2;
+
+        // Draw the fading lines
+        angular.forEach(_positionData.filter(function(bike) {
+          return bike.opacity < 1;
+        }), function(bike) {
+
+          // Each fading bike has a different opacity which is some fraction of 0.15
+          _ctx.save();
+          _ctx.globalAlpha = Math.round(100 * bike.opacity * 0.15) / 100;
+          _ctx.beginPath();
+
+          if (bike.sameStation) {
+
+            _ctx.arc(bike.start[0], bike.start[1], 14, -bike.current[2], 0);
+
+          } else {
+
+            _ctx.moveTo(bike.start[0], bike.start[1]);
+            _ctx.lineTo(bike.current[0], bike.current[1]);
+
+          }
+
+          _ctx.stroke();
+          _ctx.restore();
+
+        });
+
+        // Active bikes always have opacity 0.15
+        _ctx.globalAlpha = 0.15;
+
+        // Active bike lines
+        angular.forEach(_positionData.filter(function(bike) {
+          return bike.opacity === 1 && bike.sameStation;
+        }), function(bike) {
+
+          _ctx.beginPath();
+          _ctx.arc(bike.start[0], bike.start[1], 14, -bike.current[2], 0);
+
+        });
+
+        // Active bike lines
+        angular.forEach(_positionData.filter(function(bike) {
+          return bike.opacity === 1 && !bike.sameStation;
+        }), function(bike) {
+
+          _ctx.moveTo(bike.start[0], bike.start[1]);
+          _ctx.lineTo(bike.current[0], bike.current[1]);
+
+        });
+
+        // Draw all active lines
+        _ctx.stroke();
+
+        _ctx.restore();
+
+      }
+
+    }
+
+
+
+  }
 
 })();
-

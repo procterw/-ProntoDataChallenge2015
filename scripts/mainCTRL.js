@@ -18,12 +18,14 @@
 
 		var vm = this;
 
+    var framerate = 40;
+
     // Default options
 		vm.timeStart = new Date(2014, 10, 16);
     vm.timeStop = new Date(2014, 10, 18);
     vm.timeRange = [new Date(2014, 10, 16), new Date(2014, 10, 18)];
     vm.currentTime = 0;
-    vm.minpersec = 30;
+    vm.minpersec = 60;
 
     // Forms
     vm.subsetOptions = DataFactory.subsetOptions;
@@ -31,98 +33,115 @@
     vm.query = DataFactory.query;
 
     vm.animateQuery = animateQuery;
-    vm.animateTimespan = animateTimespan;
+    // vm.animateTimespan = animateTimespan;
 
     vm.formatTime = formatTime;
 
-    vm.stop = function() {
-      if (activeAnimation) clearInterval(activeAnimation);
-      activeAnimation = false;
-      MapFactory.bikeQueue.clear();
-    }
+    vm.stop = stop;
 
+    var runningAnimation;
 
-		DataFactory.loadData(function(trips, stations, weather, seattle) {
-      MapFactory.resize();
-      MapFactory.drawMap(seattle);
-      MapFactory.drawStations(DataFactory.stations);
-		});
+    // initialization function
+		DataFactory.loadData(initialize);
 
-    window.onresize = function(event) {
-      MapFactory.resize();
-      MapFactory.drawMap(DataFactory.seattle);
-      MapFactory.drawBikes();
-      MapFactory.drawStations(DataFactory.makeStationList);
-    };
+    window.onresize = resize;
 
     // Is an animation currently running? 
-    var activeAnimation
+    var runningAnimation;
 
+    function stop() {
+      clearInterval(runningAnimation);
+      // MapFactory.Stations.reset();
+    }
 
+    function initialize(trips, stations, weather, seattle) {
 
+      MapFactory.Map.setCoordinates(seattle);
+      MapFactory.Map.resize();
+      MapFactory.Map.setColorScales([[5,0],[18,0]]);
+      MapFactory.Map.render();
 
+      // MapFactory.Bikes.setCoordinates(seattle);
+      MapFactory.Bikes.resize();
+      MapFactory.Bikes.setColorScale([[5,0],[18,0]]);
+      // MapFactory.Bikes.render();
 
+      MapFactory.Stations.setCoordinates(stations);
+      MapFactory.Stations.resize();
+      MapFactory.Stations.setColorScale([[5,0],[18,0]]);
+      MapFactory.Stations.render();
 
+    };
 
-
-
-
+    function resize(event) {
+      MapFactory.Map.resize();
+      MapFactory.Map.render();
+    };
 
 
     function animateQuery() {
 
-      vm.stop();
+      MapFactory.Bikes.reset();
 
-      MapFactory.bikeQueue.clear();
+      // Data subset based on query object
+      var dataSubset = DataFactory.getTimeInMinutes(DataFactory.makeQuery());
 
-      // Find data subset
-      var dataSubset = DataFactory.makeQuery();
-
-      if (dataSubset.length < 1) return;
-
-      // Find median start time for animating time of day
+      // Find the median time of this query for sunrise and sunset
       var medianTime = dataSubset[Math.round(dataSubset.length/2)].starttime;
-      MapFactory.setSunScales(DataFactory.getSunriseSunset(medianTime));
 
-      // Strip day month and year off of times
-      dataSubset = DataFactory.getTimeInMinutes(dataSubset);
+      // Set color scales based on median time
+      var sunriset = DataFactory.getSunriseSunset(medianTime);
 
+      MapFactory.Map.setColorScales(sunriset);
+      MapFactory.Bikes.setColorScale(sunriset);
+      MapFactory.Stations.setColorScale(sunriset);
+      MapFactory.Water.setColorScale(sunriset);
+
+      // Set start and stop time in minutes and currentTime to 0
       vm.timeStart = 0,
-      vm.timeStop = 25 * 60;
-
-      var startTimer = new Date();
-      var frameTime = 0;
-
+      vm.timeStop = 24 * 60;
       vm.currentTime = 0;
 
-      activeAnimation = setInterval(function() {
+      // Starting time of animation
+      var animationStart = new Date();
 
-        // How much RUN time has passed
-        var dt = (new Date()).getTime() - startTimer.getTime();
+      runningAnimation = setInterval(function() {
 
-        // How many BIKE minutes have passed
-        vm.currentTime = vm.minpersec * (dt / 1000);
-        $scope.$apply();
-
-        var activeBikes = DataFactory.findTripStations(DataFactory.getDataBefore(dataSubset, vm.currentTime, true));
-        dataSubset = DataFactory.getDataAfter(dataSubset, vm.currentTime, true);
-
-        MapFactory.bikeQueue.addData(activeBikes);
-        MapFactory.bikeQueue.getPositions(DataFactory.getCurrentLocation, vm.currentTime);
-        MapFactory.bikeQueue.render();
-
-        MapFactory.drawStations();
-
-        vm.waterColor = MapFactory.waterScale(vm.currentTime % (24 * 60));
-        MapFactory.setTime(vm.currentTime % (24 * 60));
-        MapFactory.drawMap()
-        
-        // If time has gone too far, stop the animation
+        // When to stop interval
         if (vm.currentTime > vm.timeStop) {
           vm.stop();
         }
 
-      }, 50);
+        // How long has the animation actually been running for
+        var animationElapsed = (new Date()).getTime() - animationStart.getTime();
+
+        // Update the current "real world" time
+        vm.currentTime = vm.minpersec * (animationElapsed / 1000);
+        $scope.$apply();
+
+        // Remove day from the original subset
+        var activeBikes = DataFactory.findTripStations(DataFactory.getDataBefore(dataSubset, vm.currentTime, true));
+        dataSubset = DataFactory.getDataAfter(dataSubset, vm.currentTime, true);
+
+        // Rerender bikes
+        MapFactory.Bikes.setTime(vm.currentTime);
+        MapFactory.Bikes.addData(activeBikes);
+        MapFactory.Bikes.render();
+
+        // Rerender stations
+        MapFactory.Stations.setTime(vm.currentTime);
+        MapFactory.Stations.render();
+
+        // Rerender map
+        MapFactory.Map.setTime(vm.currentTime);
+        MapFactory.Map.render();
+
+        // Change background color
+        vm.waterColor = MapFactory.Water.getColor(vm.currentTime % (24 * 60));
+
+
+
+      }, framerate);
 
     }
 
@@ -133,84 +152,149 @@
 
 
 
-    // Run an animation between two timesteps
-    function animateTimespan() {
 
-      vm.stop(); // stp any active animations
+   //  function animateQuery() {
 
-      MapFactory.bikeQueue.clear(); // clear bikes from map and memory
+   //    vm.stop();
 
-      // Get subsets so it's faster to query data
-      var dataSubset = DataFactory.queryTimespan(vm.timeRange[0], vm.timeRange[1]);
-      var statusSubset = DataFactory.queryStatuses(vm.timeRange[0], vm.timeRange[1]);
-      MapFactory.stations.datum().setBikeCount(statusSubset[0]);
+   //    MapFactory.bikeQueue.clear();
 
-      if (dataSubset.length < 1) return;
+   //    // Find data subset
+   //    var dataSubset = DataFactory.makeQuery();
 
-      console.log(statusSubset)
+   //    if (dataSubset.length < 1) return;
 
-      // Find median start time for animating time of day
-      var medianTime = dataSubset[Math.round(dataSubset.length/2)].starttime;
-      MapFactory.setSunScales(DataFactory.getSunriseSunset(medianTime));
+   //    // Find median start time for animating time of day
+   //    var medianTime = dataSubset[Math.round(dataSubset.length/2)].starttime;
+   //    MapFactory.setSunScales(DataFactory.getSunriseSunset(medianTime));
 
-      console.log(statusSubset[0])
+   //    // Strip day month and year off of times
+   //    dataSubset = DataFactory.getTimeInMinutes(dataSubset);
 
-      // Add minutes to starttime and stoptimes
-      dataSubset = DataFactory.getTimeSince(dataSubset, vm.timeRange[0]);
+   //    vm.timeStart = 0,
+   //    vm.timeStop = 25 * 60;
 
-      vm.timeStart = 0,
-      vm.timeStop = (vm.timeRange[1] - vm.timeRange[0]) / (1000 * 60);
+   //    var startTimer = new Date();
+   //    var frameTime = 0;
 
-      var startTimer = new Date();
-      var frameTime = 0;
-      var previousTime = 0;
+   //    vm.currentTime = 0;
 
-      vm.currentTime = 0;
+   //    activeAnimation = setInterval(function() {
 
+   //      // How much RUN time has passed
+   //      var dt = (new Date()).getTime() - startTimer.getTime();
 
-      activeAnimation = setInterval(function() {
+   //      // How many BIKE minutes have passed
+   //      vm.currentTime = vm.minpersec * (dt / 1000);
+   //      $scope.$apply();
 
-        // How much RUN time has passed
-        var dt = (new Date()).getTime() - startTimer.getTime();
+   //      var activeBikes = DataFactory.findTripStations(DataFactory.getDataBefore(dataSubset, vm.currentTime, true));
+   //      dataSubset = DataFactory.getDataAfter(dataSubset, vm.currentTime, true);
 
-         // How many BIKE minutes have passed
-        vm.currentTime = vm.minpersec * (dt / 1000);
-        $scope.$apply();
+   //      MapFactory.bikeQueue.addData(activeBikes);
+   //      MapFactory.bikeQueue.getPositions(DataFactory.getCurrentLocation, vm.currentTime);
+   //      MapFactory.bikeQueue.render();
 
-        // If an hour has passed, update the stations with statuses
-        if (Math.floor(previousTime/60) != Math.floor(vm.currentTime/60)) {
+   //      MapFactory.drawStations();
 
-          // How many hours have passed?
-          var hoursPassed = Math.round((vm.currentTime - vm.timeStart)/60);
-          MapFactory.stations.datum().setBikeCount(statusSubset[hoursPassed]);
-
-        }
-        previousTime = vm.currentTime;
-
-        var activeBikes = DataFactory.findTripStations(DataFactory.getDataBefore(dataSubset, vm.currentTime, true));
-
-        if (activeBikes)
-
-        dataSubset = DataFactory.getDataAfter(dataSubset, vm.currentTime, true);
-
-        MapFactory.bikeQueue.addData(activeBikes);
-        MapFactory.bikeQueue.getPositions(DataFactory.getCurrentLocation, vm.currentTime);
-        MapFactory.bikeQueue.render();
-
-        MapFactory.drawStations();
-
-        vm.waterColor = MapFactory.waterScale(vm.currentTime % (24 * 60));
-        MapFactory.setTime(vm.currentTime % (24 * 60));
-        MapFactory.drawMap()
+   //      vm.waterColor = MapFactory.waterScale(vm.currentTime % (24 * 60));
+   //      MapFactory.setTime(vm.currentTime % (24 * 60));
+   //      MapFactory.drawMap()
         
-        // If time has gone too far, stop the animation
-        if (vm.currentTime > vm.timeStop) {
-          vm.stop();
-        }
+   //      // If time has gone too far, stop the animation
+   //      if (vm.currentTime > vm.timeStop) {
+   //        vm.stop();
+   //      }
 
-      });
+   //    }, 50);
 
-  	}
+   //  }
+
+
+
+
+
+
+
+
+   //  // Run an animation between two timesteps
+   //  function animateTimespan() {
+
+   //    vm.stop(); // stp any active animations
+
+   //    MapFactory.bikeQueue.clear(); // clear bikes from map and memory
+
+   //    // Get subsets so it's faster to query data
+   //    var dataSubset = DataFactory.queryTimespan(vm.timeRange[0], vm.timeRange[1]);
+   //    var statusSubset = DataFactory.queryStatuses(vm.timeRange[0], vm.timeRange[1]);
+   //    MapFactory.stations.datum().setBikeCount(statusSubset[0]);
+
+   //    if (dataSubset.length < 1) return;
+
+   //    console.log(statusSubset)
+
+   //    // Find median start time for animating time of day
+   //    var medianTime = dataSubset[Math.round(dataSubset.length/2)].starttime;
+   //    MapFactory.setSunScales(DataFactory.getSunriseSunset(medianTime));
+
+   //    console.log(statusSubset[0])
+
+   //    // Add minutes to starttime and stoptimes
+   //    dataSubset = DataFactory.getTimeSince(dataSubset, vm.timeRange[0]);
+
+   //    vm.timeStart = 0,
+   //    vm.timeStop = (vm.timeRange[1] - vm.timeRange[0]) / (1000 * 60);
+
+   //    var startTimer = new Date();
+   //    var frameTime = 0;
+   //    var previousTime = 0;
+
+   //    vm.currentTime = 0;
+
+
+   //    activeAnimation = setInterval(function() {
+
+   //      // How much RUN time has passed
+   //      var dt = (new Date()).getTime() - startTimer.getTime();
+
+   //       // How many BIKE minutes have passed
+   //      vm.currentTime = vm.minpersec * (dt / 1000);
+   //      $scope.$apply();
+
+   //      // If an hour has passed, update the stations with statuses
+   //      if (Math.floor(previousTime/60) != Math.floor(vm.currentTime/60)) {
+
+   //        // How many hours have passed?
+   //        var hoursPassed = Math.round((vm.currentTime - vm.timeStart)/60);
+   //        MapFactory.stations.datum().setBikeCount(statusSubset[hoursPassed]);
+
+   //      }
+   //      previousTime = vm.currentTime;
+
+   //      var activeBikes = DataFactory.findTripStations(DataFactory.getDataBefore(dataSubset, vm.currentTime, true));
+
+   //      if (activeBikes)
+
+   //      dataSubset = DataFactory.getDataAfter(dataSubset, vm.currentTime, true);
+
+   //      MapFactory.bikeQueue.addData(activeBikes);
+   //      MapFactory.bikeQueue.getPositions(DataFactory.getCurrentLocation, vm.currentTime);
+   //      MapFactory.bikeQueue.render();
+
+   //      MapFactory.drawStations();
+
+   //      vm.waterColor = MapFactory.waterScale(vm.currentTime % (24 * 60));
+   //      MapFactory.setTime(vm.currentTime % (24 * 60));
+   //      MapFactory.drawMap()
+        
+   //      // If time has gone too far, stop the animation
+   //      if (vm.currentTime > vm.timeStop) {
+   //        vm.stop();
+   //      }
+
+   //    });
+
+  	// }
 
 
 
