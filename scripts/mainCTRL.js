@@ -19,8 +19,9 @@
 		var vm = this;
 
     // Default options
-		vm.timeStart = new Date(2015, 7, 1);
-    vm.timeStop = new Date(2015, 7, 8);;
+		vm.timeStart = new Date(2014, 10, 16);
+    vm.timeStop = new Date(2014, 10, 18);
+    vm.timeRange = [new Date(2014, 10, 16), new Date(2014, 10, 18)];
     vm.currentTime = 0;
     vm.minpersec = 30;
 
@@ -103,8 +104,8 @@
         vm.currentTime = vm.minpersec * (dt / 1000);
         $scope.$apply();
 
-        var activeBikes = DataFactory.findTripStations(DataFactory.getDataBefore(dataSubset, vm.currentTime));
-        dataSubset = DataFactory.getDataAfter(dataSubset, vm.currentTime);
+        var activeBikes = DataFactory.findTripStations(DataFactory.getDataBefore(dataSubset, vm.currentTime, true));
+        dataSubset = DataFactory.getDataAfter(dataSubset, vm.currentTime, true);
 
         MapFactory.bikeQueue.addData(activeBikes);
         MapFactory.bikeQueue.getPositions(DataFactory.getCurrentLocation, vm.currentTime);
@@ -139,10 +140,75 @@
 
       MapFactory.bikeQueue.clear(); // clear bikes from map and memory
 
-      var dataSubset = DataFactory.queryTimespan(vm.timeStart, vm.timeStop);
+      // Get subsets so it's faster to query data
+      var dataSubset = DataFactory.queryTimespan(vm.timeRange[0], vm.timeRange[1]);
+      var statusSubset = DataFactory.queryStatuses(vm.timeRange[0], vm.timeRange[1]);
+      MapFactory.stations.datum().setBikeCount(statusSubset[0]);
 
-      var statusSubset = DataFactory.queryStatuses(vm.timeStart, vm.timeStop);
+      if (dataSubset.length < 1) return;
+
       console.log(statusSubset)
+
+      // Find median start time for animating time of day
+      var medianTime = dataSubset[Math.round(dataSubset.length/2)].starttime;
+      MapFactory.setSunScales(DataFactory.getSunriseSunset(medianTime));
+
+      console.log(statusSubset[0])
+
+      // Add minutes to starttime and stoptimes
+      dataSubset = DataFactory.getTimeSince(dataSubset, vm.timeRange[0]);
+
+      vm.timeStart = 0,
+      vm.timeStop = (vm.timeRange[1] - vm.timeRange[0]) / (1000 * 60);
+
+      var startTimer = new Date();
+      var frameTime = 0;
+      var previousTime = 0;
+
+      vm.currentTime = 0;
+
+
+      activeAnimation = setInterval(function() {
+
+        // How much RUN time has passed
+        var dt = (new Date()).getTime() - startTimer.getTime();
+
+         // How many BIKE minutes have passed
+        vm.currentTime = vm.minpersec * (dt / 1000);
+        $scope.$apply();
+
+        // If an hour has passed, update the stations with statuses
+        if (Math.floor(previousTime/60) != Math.floor(vm.currentTime/60)) {
+
+          // How many hours have passed?
+          var hoursPassed = Math.round((vm.currentTime - vm.timeStart)/60);
+          MapFactory.stations.datum().setBikeCount(statusSubset[hoursPassed]);
+
+        }
+        previousTime = vm.currentTime;
+
+        var activeBikes = DataFactory.findTripStations(DataFactory.getDataBefore(dataSubset, vm.currentTime, true));
+
+        if (activeBikes)
+
+        dataSubset = DataFactory.getDataAfter(dataSubset, vm.currentTime, true);
+
+        MapFactory.bikeQueue.addData(activeBikes);
+        MapFactory.bikeQueue.getPositions(DataFactory.getCurrentLocation, vm.currentTime);
+        MapFactory.bikeQueue.render();
+
+        MapFactory.drawStations();
+
+        vm.waterColor = MapFactory.waterScale(vm.currentTime % (24 * 60));
+        MapFactory.setTime(vm.currentTime % (24 * 60));
+        MapFactory.drawMap()
+        
+        // If time has gone too far, stop the animation
+        if (vm.currentTime > vm.timeStop) {
+          vm.stop();
+        }
+
+      });
 
   	}
 
@@ -155,12 +221,14 @@
 
     // Formates a "minute" time into hours and minutes
     function formatTime(time) {
-      var hours = Math.floor(time / 60) + 4;
+      var hours = (Math.floor(time / 60) + 4);
       var minutes = Math.round(time % 60);
+      var ampm = Math.floor((hours % 25)/12) ? "PM" : "AM";
       if (hours === 0) hours = 12;
+      hours = hours % 12;
       if (hours < 10) hours = "0" + hours;
       if (minutes < 10) minutes = "0" + minutes;
-      return hours + ":" + minutes + " " + (time < 12 * 60 ? "AM" : "PM");
+      return hours + ":" + minutes + " " + ampm;
     }
 
   }

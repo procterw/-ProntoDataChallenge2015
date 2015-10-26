@@ -46,7 +46,6 @@
 					Factory.stations.datum().removeBike(d.from_station_id)
 				});
 				this.data = this.data.concat(data);
-				
 			},
 			getPositions: function(getCurrentLocation, time) {
 				this.data.forEach(function(d) {
@@ -294,7 +293,7 @@
 		}
 
 
-		function drawStations(stations) {
+		function drawStations(stations, plotType) {
 
 			// Either store the new data
 			// OR pull it from memory
@@ -322,71 +321,100 @@
 
         var x = xScale(+station.long);
         var y = yScale(+station.lat);
-        var r = 9;
 
-        ctx.beginPath();
-        ctx.arc(x,y,r+1,0,T);
-        ctx.fillStyle = stationScale(_currentTime);
-        ctx.fill();
-        ctx.stroke();
 
-        // First draw the background circle
+        function bikeCountPlot() {
 
-        var ndocks = +station.dockcount * 2; // how many available docks
-       
-        var diff = Math.abs(station.arrivals - station.departures); 
-        var theta1 = T / 4; // Start angle
-        var theta2;
+        	var r = 9;
 
-        ctx.beginPath();
+	        ctx.beginPath();
+	        ctx.arc(x,y,r+1,0,T);
+	        ctx.fillStyle = stationScale(_currentTime);
+	        ctx.fill();
+	        ctx.stroke();
 
-        // Clockwise pie chart
-        if (station.arrivals > station.departures) {
+	        var ndocks = +station.dockcount * 2; // how many available docks
+	        var bikes = station.bikeCount;
+	        var theta1 = 0;
+	        var theta2 = (bikes/ndocks) * T;
 
-          theta2 = theta1 + Math.min(T, T / ndocks) * diff;
+	        ctx.beginPath();
           ctx.fillStyle = "#5ECCA7";
           ctx.arc(x,y,8,theta1,theta2, false);
+          ctx.lineTo(x,y);
+	        ctx.fill();
 
-        // Counter-clockwise pie chart
-        } else if (station.arrivals < station.departures) {
+        }
 
-          theta2 = theta1 + Math.min(T, T / ndocks) * diff;
-          ctx.fillStyle = "#E6786C";
-          ctx.arc(x,y,8,theta1,theta2, false);
+        bikeCountPlot();
 
-        } 
+        // Bar charts showing how many bikes have been
+        // lost or added since the start
+        function netDifferencePlot() {
+	        
+	        var r = 9;
 
-        ctx.lineTo(x,y);
-        ctx.fill();
+	        ctx.beginPath();
+	        ctx.arc(x,y,r+1,0,T);
+	        ctx.fillStyle = stationScale(_currentTime);
+	        ctx.fill();
+	        ctx.stroke();
+
+	        var ndocks = +station.dockcount * 2; // how many available docks
+	       
+	        var diff = Math.abs(station.arrivals - station.departures); 
+	        var theta1 = T / 4; // Start angle
+	        var theta2;
+
+	        ctx.beginPath();
+
+	        // Clockwise pie chart
+	        if (station.arrivals > station.departures) {
+
+	          theta2 = theta1 + Math.min(T, T / ndocks) * diff;
+	          ctx.fillStyle = "#5ECCA7";
+	          ctx.arc(x,y,8,theta1,theta2, false);
+
+	        // Counter-clockwise pie chart
+	        } else if (station.arrivals < station.departures) {
+
+	          theta2 = theta1 + Math.min(T, T / ndocks) * diff;
+	          ctx.fillStyle = "#E6786C";
+	          ctx.arc(x,y,8,theta1,theta2, false);
+
+	        } 
+
+	        ctx.lineTo(x,y);
+	        ctx.fill();
+
+	      }
 
 
+        // Two half circles which show total arrivals and departures
+        function usagePlot() {
 
+					var a1 = (station.arrivals * 3) + 60;
+	        var a2 = (station.departures * 3) + 60;
+					
+	        var r1 = Math.sqrt(2 * a1 / Math.PI)
+	        var r2 = Math.sqrt(2 * a2 / Math.PI)
 
-    //     // USAGE PLOT
+	        var T = Math.PI * 2;
 
-				// var a1 = (station.arrivals * 3) + 60;
-    //     var a2 = (station.departures * 3) + 60;
-				
-    //     var r1 = Math.sqrt(2 * a1 / Math.PI)
-    //     var r2 = Math.sqrt(2 * a2 / Math.PI)
+					// Draw circles
+					ctx.beginPath();
+	        ctx.fillStyle = "#D68950";
+					ctx.arc(x,y,r1,T/4, 3 * T/4);
+	        ctx.fill();
+	        ctx.stroke();
+					
+	        ctx.beginPath();
+	        ctx.fillStyle = "#5BC7A3";
+	        ctx.arc(x,y,r2,3 * T/4,5 * T/4);
+	        ctx.fill();
+	        ctx.stroke();
 
-				// // Station x and y in pixel coords
-
-
-    //     var T = Math.PI * 2;
-
-				// // Draw circles
-				// ctx.beginPath();
-    //     ctx.fillStyle = "#D68950";
-				// ctx.arc(x,y,r1,T/4, 3 * T/4);
-    //     ctx.fill();
-    //     ctx.stroke();
-				
-    //     ctx.beginPath();
-    //     ctx.fillStyle = "#5BC7A3";
-    //     ctx.arc(x,y,r2,3 * T/4,5 * T/4);
-    //     ctx.fill();
-    //     ctx.stroke();
+    		}
         
 
 			});

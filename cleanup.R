@@ -127,15 +127,23 @@ statusSubset$time <- roundedTimes[match(as.character(statusSubset$time), as.char
 # TODO is this the right approach?
 # Combine available bikes and bikes_blocked
 statusSubset$bikes <- statusSubset$bikes_available + statusSubset$bikes_blocked
+statusSubset <- statusSubset[,-c(2:5)]
 
 # New data frame which shows missing values for stations
 # instead of not including them
 fullStatuses <- expand.grid(1:max(statuses$station_id),roundedTimes)
 names(fullStatuses) <- c("station_id", "time")
 
+
+
 # Merge the two dataframes. This will fill in missing values for
 # statusSubset
 fullStatuses <- merge(fullStatuses, statusSubset, all.x=TRUE)
+
+# Remove duplicated time/station combinations
+fullStatuses <- fullStatuses[-which(duplicated(paste0(fullStatuses$station_id, fullStatuses$time))),]
+
+# Sort by time and then id
 fullStatuses <- fullStatuses[with(fullStatuses, order(time, station_id)),]
 
 # Write to csv

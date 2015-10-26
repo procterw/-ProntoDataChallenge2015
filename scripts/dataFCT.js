@@ -30,6 +30,7 @@
     Factory.queryTimespan = queryTimespan;
 
     Factory.getTimeInMinutes = getTimeInMinutes;
+    Factory.getTimeSince = getTimeSince;
 
     Factory.queryStatuses = queryStatuses
 
@@ -89,8 +90,7 @@
 					d3.csv("clean_data/weather.csv", function(weather) {
 						d3.json("clean_data/Neighborhoods.json", function(error, geojson) {
               d3.csv("clean_data/statuses.csv", function(statuses) {
-                statusString = statuses;
-                cleanStatuses(statuses);
+                statusString = cleanStatuses(statuses);
                 Factory.trips = cleanTripData(trips, stations);
                 Factory.stations = addStationTracking(stations);
                 Factory.weather = cleanWeatherData(weather);
@@ -103,30 +103,45 @@
 			});
 		}
 
-    // Takes a station object and adds functions for 
+    // Takes a station object and adds functions for
+    // counting arrivals and departures
     function addStationTracking(stations) {
       
       stations.forEach(function(d) {
         d.arrivals = 0;
         d.departures = 0;
+        d.bikeCount = 0;
       });
+
+      stations.setBikeCount = function(counts) {
+        stations.forEach(function(s,i) {
+          s.bikeCount = counts[i] || s.bikeCount;
+        });
+      }
 
       stations.addBike = function(terminal) {
         stations.forEach(function(s) {
-          if (s.terminal === terminal) s.arrivals++;
+          if (s.terminal === terminal) {
+            s.arrivals++;
+            s.bikeCount++;
+          }
         });
       };
 
       stations.removeBike = function(terminal) {
         stations.forEach(function(s) {
-          if (s.terminal === terminal) s.departures++;
+          if (s.terminal === terminal) {
+            s.departures++;
+            s.bikeCount--;
+          }
         });
       };
 
       stations.resetBikes = function() {
         stations.forEach(function(s) {
-          d.arrivals=0;
-          d.departures=0;
+          d.arrivals =0;
+          d.departures = 0;
+          d.bikeCount = 0;
         });
       };
 
@@ -170,6 +185,18 @@
 
     }
 
+    function getTimeSince(data, time) {
+      function time2min(t) {
+        return (t - time) / (60 * 1000)
+      }
+      angular.forEach(data, function(d) {
+        if (d.starttime) d.starttime_min = time2min(d.starttime)
+        if (d.stoptime) d.stoptime_min = time2min(d.stoptime)
+        if (d.Date) d.Date_min = time2min(d.Date)
+      });
+      return data;
+    }
+
     function getTimeInMinutes(data) {
       function time2min(t) {
         return t.getHours() * 60 + t.getMinutes();
@@ -210,10 +237,26 @@
 
     function cleanStatuses(data) {
 
-      console.log(data);
-      for (var i=0; i < data.length/67; i++) {
+      var statuses = []; // initialize empty array
+
+      // Loop through the data in intervals of 65 since there
+      // are 65 stations
+      for (var i=0; i < (data.length/65)-1; i++) {
+
+        var startI = i * 65;
+        var endI = (i + 1) * 65;
+
+        // All stations for one hourly timestep
+        var timeGroup = data.slice(startI, endI).map(function(d) {
+          return +d.x;
+        });
+
+        statuses.push(timeGroup);
 
       } 
+
+      return statuses;
+
     }
 
     function unpackTopoJSON(data) {
@@ -252,11 +295,13 @@
       // Statuses are organized in groups of 67 stations
       // with 1 hour intervals starting at 2014-10-16
       // First find the number of hours between
+      console.log(time1, time2)
       var starttime = new Date(2014, 10, 16);
       var tdiff1 = (time1 - starttime) / (1000 * 60 * 60);
       var tdiff2 = (time2 - starttime) / (1000 * 60 * 60);
-
-      return statusString.slice(tdiff1 * 67, tdiff2 * 67);
+      // Slice the status array. Indices indicate number of hours
+      // since starttime
+      return statusString.slice(tdiff1 + 4, tdiff2 + 4);
     }
 
 		function filterByTime(data, time) {
@@ -272,18 +317,18 @@
       });
     }
 
-    function getDataBefore(data, time) {
+    function getDataBefore(data, time, byMinutes) {
       return data.filter(function(d) {
-        // check if time is date object or just minutes
-        return time < 25 * 60 ? +d.starttime_min < time : +d.starttime < time;
+        if (byMinutes) return +d.starttime_min < time;
+        return +d.starttime < time;
       }) || [];
 
     }
 
-    function getDataAfter(data, time) {
+    function getDataAfter(data, time, byMinutes) {
       return data.filter(function(d) {
-        // check if time is date object or just minutes
-        return time < 25 * 60 ? +d.starttime_min > time : +d.starttime > time;
+        if (byMinutes) return +d.starttime_min > time;
+        return +d.starttime > time;
       }) || [];
     }
 
