@@ -17,7 +17,6 @@
 		var Factory = {};
 
     Factory.trips;
-    Factory.stations;
     Factory.weather;
 
 		Factory.loadData = loadData;
@@ -77,7 +76,7 @@
     };
 
     // four hour timeshift to apply to all dates
-    var timeShift = -1000 * 60 * 60 * 4;
+    var timeShift = 1000 * 60 * 60 * 4;
 
     var statusString; // String of 2 digit statuses to parse
 
@@ -91,7 +90,7 @@
               d3.csv("clean_data/statuses.csv", function(statuses) {
                 statusString = cleanStatuses(statuses);
                 Factory.trips = cleanTripData(trips, stations);
-                Factory.stations = addStationTracking(stations);
+                Factory.stations = stations;
                 Factory.weather = cleanWeatherData(weather);
                 Factory.seattle = unpackTopoJSON(geojson);
                 callback(trips, stations, weather, Factory.seattle);
@@ -101,52 +100,6 @@
 				});
 			});
 		}
-
-    // Takes a station object and adds functions for
-    // counting arrivals and departures
-    function addStationTracking(stations) {
-      
-      stations.forEach(function(d) {
-        d.arrivals = 0;
-        d.departures = 0;
-        d.bikeCount = 0;
-      });
-
-      stations.setBikeCount = function(counts) {
-        stations.forEach(function(s,i) {
-          s.bikeCount = counts[i] || s.bikeCount;
-        });
-      }
-
-      stations.addBike = function(terminal) {
-        stations.forEach(function(s) {
-          if (s.terminal === terminal) {
-            s.arrivals++;
-            s.bikeCount++;
-          }
-        });
-      };
-
-      stations.removeBike = function(terminal) {
-        stations.forEach(function(s) {
-          if (s.terminal === terminal) {
-            s.departures++;
-            s.bikeCount--;
-          }
-        });
-      };
-
-      stations.resetBikes = function() {
-        stations.forEach(function(s) {
-          d.arrivals =0;
-          d.departures = 0;
-          d.bikeCount = 0;
-        });
-      };
-
-      return stations;
-
-    }
 
     // Make a query using the internal QUERY object which is bound
     // To ui controls in the main view

@@ -7,9 +7,9 @@
   angular.module("App")
     .factory("MapFactory", MapFactory);
 
-  MapFactory.$inject = [];
+  MapFactory.$inject = ["$rootScope"];
 
-  function MapFactory() {
+  function MapFactory($rootScope) {
 
     var Factory = {};
 
@@ -83,7 +83,7 @@
       sunrise = sunrise[0] * 60 + sunrise[1]; // which minute of day is it
       sunset = sunset[0] * 60 + sunset[1]; // which minute of day is it
       return d3.scale.linear()
-        .domain([0, sunrise - 30, sunrise + 30, sunset - 30, sunset + 30, (25 * 60)])
+        .domain([0, sunrise - 60, sunrise + 60, sunset - 60, sunset + 60, (25 * 60)])
         .range([night, night, day, day, night, night]);
     }
 
@@ -156,6 +156,13 @@
       }
 
     }
+
+
+
+
+
+
+
 
 
 
@@ -271,38 +278,91 @@
 
 
 
+
+
+
+
+
+
+
     function Stations(id) {
 
       var Stations = this;
 
       var _canvas = d3.select(id);
-      _canvas.call(d3.behavior.zoom()
-        .scaleExtent([0.5, 2])
-        .on("zoom", zoom));
 
       // Internal coordinates data
-      var _coordinates = [];
+      var _stations = [];
       var _fillScale; // scale for
       var _strokeScale;
+      var _hoveredStation = -1;
       var _xScale; // coordinates -> xy
       var _yScale; // coordinates -> xy
       var _currentTime = 0; // current time in minutes
       var _ctx = _canvas.node().getContext('2d');
       var _retina = findRetina(_ctx); // 1 for non retina, 1+ for retina
 
+      var _plotType;
+
       var _width, _height;
 
-      Stations.setCoordinates = setCoordinates;
+      Stations.setStations = setStations;
       Stations.setColorScale = setColorScale;
       Stations.setTime = setTime;
       Stations.resize = resize;
+      Stations.reset = reset;
+
+      Stations.getHoveredStation = getHoveredStation;
+
+      Stations.removeBikes = removeBikes;
+      Stations.addBike = addBike;
 
       Stations.render = render;
 
+      _canvas.on("mousemove", mousemove);
+
       return Stations;
 
-      function setCoordinates(coords) {
-        _coordinates = coords;
+      function getHoveredStation() {
+        return _stations[_hoveredStation];
+      }
+
+      function mousemove(d,i) {
+        var x = d3.event.offsetX;
+        var y = d3.event.offsetY;
+        var closestDist = 999;
+        var closestIndex = -1;
+        angular.forEach(_stations, function(p, i) {
+          var dist = Math.sqrt(Math.pow(x - _xScale(p.long), 2) + Math.pow(y-_yScale(p.lat), 2));
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestIndex = i;
+          }
+        });
+        var previousStation = _hoveredStation
+        if (closestDist < 12) {
+          _hoveredStation = closestIndex;
+        } else {
+          _hoveredStation = -1;
+        }
+        if (previousStation !== _hoveredStation) {
+          $rootScope.$apply();
+          render();
+        };
+      }
+
+      function reset() {
+        clear();
+        _stations.forEach(function(s) {
+          s.bikeCount = 0;
+          s.departures = 0;
+          s.arrivals = 0;
+        });
+      }
+
+      function setStations(stations) {
+        _stations = stations;
+        reset();
       }
 
       function setColorScale(sunriset) {
@@ -315,16 +375,29 @@
         _currentTime = time;
       }
 
-      // Takes ride data and uses it to add and remove 
-      // counts
-      // function updateCounts(data) {
-      //   angular.forEach(data, function(d) {
-      //     _coordinates.removeBike(d.from_station_id);
-      //     if ((time - d.stoptime_min) >= pathFadeTime) {
-      //       _coordinates.addBike(d.to_station_id)
-      //     }
-      //   });
-      // }
+      // Takes a dataset and updates internal bike tracking
+      // Based on 
+      function removeBikes(data) {
+        angular.forEach(data, function(d) {
+          _stations.forEach(function(s) {
+            if (s.terminal === d.from_station_id) {
+              s.bikeCount--;
+              s.departures++;
+            }
+          });
+        });
+      }
+
+      function addBike(terminal) {
+        _stations.forEach(function(s) {
+          if (s.terminal === terminal) {
+            s.bikeCount++;
+            s.arrivals++;
+          }
+        });
+      }
+
+      var init = true;
 
       function resize() {
 
@@ -346,6 +419,12 @@
         _xScale = scale.x;
         _yScale = scale.y;
 
+        _canvas.call(d3.behavior.zoom()
+          .x(_xScale)
+          .y(_yScale)
+          .scaleExtent([0.5, 2])
+          .on("zoom", zoom));
+        init = false;
 
       }
 
@@ -354,38 +433,96 @@
         transforms.zoom = d3.event.scale;
         render();
         Factory.Map.render();
+        Factory.Bikes.render();
       }
 
       function clear() {
         _ctx.clearRect(0, 0, _width, _height);
       }
 
-      function render() {
+      function render(plotType) {
+
+        // Save plot type
+        _plotType = plotType || _plotType;
 
         clear();
         _ctx.save();
-        _ctx.translate(transforms.translation[0], transforms.translation[1]);
-        _ctx.scale(transforms.zoom * _retina, transforms.zoom * _retina);
+        // _ctx.translate(transforms.translation[0], transforms.translation[1]);
+        // _ctx.scale(transforms.zoom * _retina, transforms.zoom * _retina);
 
         // Math constants
-        var r = 8;
+        var r = 10;
         var T = 2 * Math.PI;
 
-        _ctx.lineWidth = 2;
+        _ctx.globalAlpha = 0.8;
+        _ctx.lineWidth = 1;
         _ctx.strokeStyle = _strokeScale(_currentTime);
 
-        for (var i = 0; i < _coordinates.length; i++) {
+        for (var i = 0; i < _stations.length; i++) {
 
-          var station = _coordinates[i];
+          var isHoveredStation = _hoveredStation === i;
+          var addedSize = isHoveredStation ? 2 : 0;
+
+          var station = _stations[i];
 
           var x = _xScale(+station.long);
           var y = _yScale(+station.lat);
 
-          _ctx.beginPath();
-          _ctx.arc(x, y, r + 1, 0, T);
-          _ctx.fillStyle = _fillScale(_currentTime);
-          _ctx.fill();
-          _ctx.stroke();
+
+          // Initial plot
+          if (!_plotType) {
+            _ctx.beginPath();
+            _ctx.arc(x, y, r + addedSize, 0, T);
+            _ctx.fillStyle = _fillScale(_currentTime);
+            _ctx.fill();
+            _ctx.stroke();
+          }
+
+          if (_plotType === "usage") {
+
+            var area = ((station.arrivals + station.departures) * 3) + 125;
+            var r1 = Math.sqrt(area / Math.PI);
+
+            var activity = station.arrivals + station.departures;
+            var ratio = station.arrivals / activity;
+
+            var t1 = station.departures === 0 ? 0 : T;
+            var t2 = activity == 0 ? 0 : T * ratio;
+
+            _ctx.globalAlpha = isHoveredStation ? 1 : 0.8
+
+            if (!activity) {
+              _ctx.beginPath();
+              _ctx.arc(x, y, r + addedSize, 0, T);
+              _ctx.fillStyle = _fillScale(_currentTime);
+              _ctx.fill();
+              _ctx.stroke();
+            }
+
+            // arrivals
+            if (t2) {
+              _ctx.beginPath();
+              _ctx.fillStyle = "#73B1C9";
+              _ctx.moveTo(x,y);
+              _ctx.arc(x,y,r1 + addedSize, t1,t2,true);
+              _ctx.lineTo(x,y);
+              _ctx.fill();
+              _ctx.stroke();
+            }
+
+            // departures
+            if (t1) {
+              _ctx.beginPath();
+              _ctx.fillStyle = "#E5715A";
+              _ctx.moveTo(x,y);
+              _ctx.arc(x,y,r1 + addedSize,t2,T,true);
+              _ctx.lineTo(x,y);
+              _ctx.fill();
+              _ctx.stroke();
+            }
+          
+
+          }
 
         }
 
@@ -397,6 +534,13 @@
 
 
     }
+
+
+
+
+
+
+
 
 
 
@@ -430,13 +574,23 @@
       return Bikes;
 
       function addData(data) {
-        // Factory.Stations.updateCounts(data);
+        Factory.Stations.removeBikes(data);
         _rawData = _rawData.concat(data);
         getPositions();
       }
 
       // Converts raw data to position data
       function getPositions() {
+
+        angular.forEach(_rawData, function(d) {
+          if (d.finished && d.stoptime_min > _currentTime) {
+            console.log("WHAT")
+          }
+          if (!d.finished && d.stoptime_min < _currentTime) {
+            d.finished = true;
+            Factory.Stations.addBike(d.to_station_id);
+          }
+        });
 
         var pathFadeTime = 60;
 

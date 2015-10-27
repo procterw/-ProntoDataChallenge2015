@@ -27,6 +27,8 @@
     vm.currentTime = 0;
     vm.minpersec = 60;
 
+    vm.hoveredStation = MapFactory.Stations.getHoveredStation;
+
     // Forms
     vm.subsetOptions = DataFactory.subsetOptions;
     vm.monthOptions = DataFactory.monthOptions;
@@ -57,34 +59,37 @@
     function initialize(trips, stations, weather, seattle) {
 
       MapFactory.Map.setCoordinates(seattle);
-      MapFactory.Map.resize();
       MapFactory.Map.setColorScales([[5,0],[18,0]]);
-      MapFactory.Map.render();
 
-      // MapFactory.Bikes.setCoordinates(seattle);
-      MapFactory.Bikes.resize();
       MapFactory.Bikes.setColorScale([[5,0],[18,0]]);
       // MapFactory.Bikes.render();
 
-      MapFactory.Stations.setCoordinates(stations);
-      MapFactory.Stations.resize();
+      MapFactory.Stations.setStations(stations);
       MapFactory.Stations.setColorScale([[5,0],[18,0]]);
-      MapFactory.Stations.render();
+
+      resize();
 
     };
 
     function resize(event) {
       MapFactory.Map.resize();
       MapFactory.Map.render();
+      MapFactory.Stations.resize();
+      MapFactory.Stations.render();
+      MapFactory.Bikes.resize();
+      MapFactory.Bikes.render();
     };
 
 
     function animateQuery() {
 
       MapFactory.Bikes.reset();
+      MapFactory.Stations.reset();
 
       // Data subset based on query object
       var dataSubset = DataFactory.getTimeInMinutes(DataFactory.makeQuery());
+
+      angular.forEach(dataSubset, function(d) { d.finished=false; });
 
       // Find the median time of this query for sunrise and sunset
       var medianTime = dataSubset[Math.round(dataSubset.length/2)].starttime;
@@ -98,7 +103,7 @@
       MapFactory.Water.setColorScale(sunriset);
 
       // Set start and stop time in minutes and currentTime to 0
-      vm.timeStart = 0,
+      vm.timeStart = 0;
       vm.timeStop = 24 * 60;
       vm.currentTime = 0;
 
@@ -130,7 +135,7 @@
 
         // Rerender stations
         MapFactory.Stations.setTime(vm.currentTime);
-        MapFactory.Stations.render();
+        MapFactory.Stations.render("usage");
 
         // Rerender map
         MapFactory.Map.setTime(vm.currentTime);
@@ -305,11 +310,14 @@
 
     // Formates a "minute" time into hours and minutes
     function formatTime(time) {
+
       var hours = (Math.floor(time / 60) + 4);
       var minutes = Math.round(time % 60);
-      var ampm = Math.floor((hours % 25)/12) ? "PM" : "AM";
-      if (hours === 0) hours = 12;
+
+      var ampm = hours < 12 || hours > 23 ? "AM" : "PM";
       hours = hours % 12;
+      if (hours === 0) hours = 12;
+
       if (hours < 10) hours = "0" + hours;
       if (minutes < 10) minutes = "0" + minutes;
       return hours + ":" + minutes + " " + ampm;

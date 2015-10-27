@@ -40,6 +40,8 @@
 
 		<div class="canvas-cover">
 			<h3>{{main.formatTime(main.currentTime)}}</h3>
+			<p>{{main.hoveredStation().name}}</p>
+			<p>{{main.hoveredStation().dockcount}} {{main.hoveredStation() ? "Docks" : ""}}</p>
 		</div>
 
 
@@ -71,6 +73,9 @@
 
 		<button ng-click="main.animateTimespan()">GO</button>
 		<button ng-click="main.stop()">STOP</button>
+
+		<br>
+
 
 	</div>
 
