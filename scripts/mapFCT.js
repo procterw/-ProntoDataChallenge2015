@@ -480,47 +480,80 @@
 
           if (_plotType === "usage") {
 
-            var area = ((station.arrivals + station.departures) * 3) + 125;
-            var r1 = Math.sqrt(area / Math.PI);
+            // var area = ((station.arrivals + station.departures) * 3) + 125;
+            // var r1 = Math.sqrt(area / Math.PI);
 
             var activity = station.arrivals + station.departures;
-            var ratio = station.arrivals / activity;
+            // var ratio = station.arrivals / activity;
 
-            var t1 = station.departures === 0 ? 0 : T;
-            var t2 = activity == 0 ? 0 : T * ratio;
+            // var t1 = station.departures === 0 ? 0 : T;
+            // var t2 = activity == 0 ? 0 : T * ratio;
 
             _ctx.globalAlpha = isHoveredStation ? 1 : 0.8
 
-            if (!activity) {
-              _ctx.beginPath();
-              _ctx.arc(x, y, r + addedSize, 0, T);
-              _ctx.fillStyle = _fillScale(_currentTime);
-              _ctx.fill();
-              _ctx.stroke();
-            }
+            // if (!activity) {
+            //   _ctx.beginPath();
+            //   _ctx.arc(x, y, r + addedSize, 0, T);
+            //   _ctx.fillStyle = _fillScale(_currentTime);
+            //   _ctx.fill();
+            //   _ctx.stroke();
+            // }
 
-            // arrivals
-            if (t2) {
+            // // arrivals
+            // if (t2) {
+            //   _ctx.beginPath();
+            //   _ctx.fillStyle = "#73B1C9";
+            //   _ctx.moveTo(x,y);
+            //   _ctx.arc(x,y,r1 + addedSize, t1,t2,true);
+            //   _ctx.lineTo(x,y);
+            //   _ctx.fill();
+            //   _ctx.stroke();
+            // }
+
+            // // departures
+            // if (t1) {
+            //   _ctx.beginPath();
+            //   _ctx.fillStyle = "#E5715A";
+            //   _ctx.moveTo(x,y);
+            //   _ctx.arc(x,y,r1 + addedSize,t2,T,true);
+            //   _ctx.lineTo(x,y);
+            //   _ctx.fill();
+            //   _ctx.stroke();
+            // }
+
+            var area1 = station.arrivals === 0 ? 50 : (station.arrivals * 4) + 125;
+            var area2 = station.departures === 0 ? 50 : (station.departures * 4) + 125;
+
+            var r1 = Math.sqrt(area1 / Math.PI);
+            var r2 = Math.sqrt(area2 / Math.PI);
+
+            function drawarrivals() {
+
               _ctx.beginPath();
               _ctx.fillStyle = "#73B1C9";
-              _ctx.moveTo(x,y);
-              _ctx.arc(x,y,r1 + addedSize, t1,t2,true);
-              _ctx.lineTo(x,y);
+              _ctx.arc(x+4,y,r1 + addedSize,0,T,true);
               _ctx.fill();
               _ctx.stroke();
+
             }
 
-            // departures
-            if (t1) {
+            function drawdepartures() {
+            
               _ctx.beginPath();
               _ctx.fillStyle = "#E5715A";
-              _ctx.moveTo(x,y);
-              _ctx.arc(x,y,r1 + addedSize,t2,T,true);
-              _ctx.lineTo(x,y);
+              _ctx.arc(x-4,y,r2 + addedSize,0,T,true);
               _ctx.fill();
               _ctx.stroke();
+            
             }
-          
+
+            if (r1 < r2) {
+              drawarrivals()
+              drawdepartures()
+            } else {
+              drawdepartures()
+              drawarrivals()
+            }
 
           }
 

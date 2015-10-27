@@ -25,7 +25,7 @@
     vm.timeStop = new Date(2014, 10, 18);
     vm.timeRange = [new Date(2014, 10, 16), new Date(2014, 10, 18)];
     vm.currentTime = 0;
-    vm.minpersec = 60;
+    vm.minpersec = 40;
 
     vm.hoveredStation = MapFactory.Stations.getHoveredStation;
 
