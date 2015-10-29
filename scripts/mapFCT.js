@@ -454,7 +454,6 @@
         var r = 10;
         var T = 2 * Math.PI;
 
-        _ctx.globalAlpha = 0.8;
         _ctx.lineWidth = 1;
         _ctx.strokeStyle = _strokeScale(_currentTime);
 
@@ -489,7 +488,7 @@
             // var t1 = station.departures === 0 ? 0 : T;
             // var t2 = activity == 0 ? 0 : T * ratio;
 
-            _ctx.globalAlpha = isHoveredStation ? 1 : 0.8
+            _ctx.globalAlpha = isHoveredStation ? 1 : 0.9;
 
             // if (!activity) {
             //   _ctx.beginPath();
@@ -521,46 +520,102 @@
             //   _ctx.stroke();
             // }
 
-            var area1 = station.arrivals === 0 ? 50 : (station.arrivals * 4) + 125;
-            var area2 = station.departures === 0 ? 50 : (station.departures * 4) + 125;
+            // var area1 = station.arrivals === 0 ? 75 : (station.arrivals * 4) + 125;
+            // var area2 = station.departures === 0 ? 75 : (station.departures * 4) + 125;
 
-            var r1 = Math.sqrt(area1 / Math.PI);
-            var r2 = Math.sqrt(area2 / Math.PI);
+            // var r1 = Math.sqrt(area1 / Math.PI);
+            // var r2 = Math.sqrt(area2 / Math.PI);
+            // var dist = Math.max(r1,r2)/3;
+
+            function drawblank() {
+              _ctx.beginPath();
+              _ctx.arc(x, y, r + addedSize, 0, T);
+              _ctx.fillStyle = _fillScale(_currentTime);
+              _ctx.fill();
+              _ctx.stroke();
+            }
+
+            // function drawdepartures() {
+            
+            //   _ctx.beginPath();
+            //   _ctx.fillStyle = "#E5715A";
+            //   _ctx.arc(x-dist,y,r2 + addedSize,0,T,true);
+            //   _ctx.fill();
+            //   _ctx.stroke();
+            
+            // }
+
+
+            // function drawarrivals() {
+
+            //   _ctx.beginPath();
+            //   _ctx.fillStyle = "#73B1C9";
+            //   _ctx.arc(x+dist,y,r1 + addedSize,0,T,true);
+            //   _ctx.fill();
+            //   _ctx.stroke();
+
+            // }
+
+            var r = 8;
+
+            // var h1 = Math.log(station.arrivals) / Math.log(2) * 5;
+            // var h2 = Math.log(station.departures) / Math.log(2) * 5;
+
+            function drawHalfCircle() {
+              // _ctx.beginPath();
+              // _ctx.arc(x, y, r + addedSize, 0, T/2);
+              // _ctx.fillStyle = _fillScale(_currentTime);
+              // _ctx.fill();
+              // _ctx.stroke();
+            }
 
             function drawarrivals() {
 
-              _ctx.beginPath();
               _ctx.fillStyle = "#73B1C9";
-              _ctx.arc(x+4,y,r1 + addedSize,0,T,true);
-              _ctx.fill();
-              _ctx.stroke();
 
+              for (var i=0; i<station.arrivals; i++) {
+                var col=i%8;
+                var row=Math.floor(i/8);
+                _ctx.fillRect(x + col*2 - 8, y - row*2, 2, -2)
+              }
+            
             }
 
             function drawdepartures() {
-            
-              _ctx.beginPath();
+
               _ctx.fillStyle = "#E5715A";
-              _ctx.arc(x-4,y,r2 + addedSize,0,T,true);
-              _ctx.fill();
-              _ctx.stroke();
+
+              for (var i=0; i<station.departures; i++) {
+                var col=i%8;
+                var row=Math.floor(i/8);
+                _ctx.fillRect(x + col*2 - 8, y + row*2, 2, 2)
+              }
             
+        
             }
 
-            if (r1 < r2) {
+            drawblank(x,y,r)
               drawarrivals()
               drawdepartures()
-            } else {
-              drawdepartures()
-              drawarrivals()
-            }
+  
+            
+            // if (!station.arrivals && !station.departures) {
+              
+            // } else if (station.arrivals < station.departures) {
+            //   drawHalfCircle()
+
+            // } else {
+            //   drawHalfCircle()
+            //   drawdepartures()
+            //   drawarrivals()
+            // }
 
           }
 
         }
 
         // Restore previous state
-        _ctx.restore();
+        
 
 
       }
@@ -747,6 +802,21 @@
 
         // Draw all active lines
         _ctx.stroke();
+
+        
+        _ctx.globalAlpha = 0.75;
+
+
+        angular.forEach(_positionData.filter(function(bike) {
+          return bike.opacity > 0.85;
+        }), function(bike) {
+          _ctx.beginPath();
+          _ctx.arc(bike.current[0], bike.current[1], 3, 0, Math.PI * 2);
+          _ctx.fillStyle = "white";
+          _ctx.fill();
+        });
+
+        
 
         _ctx.restore();
 
