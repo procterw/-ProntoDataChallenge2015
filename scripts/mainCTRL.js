@@ -70,10 +70,13 @@
 
     };
 
+    // Resize and rerender canvas layers.
+    // Stations must be resized first because that is
+    // the top layer and therefore handles zoom events.
     function resize(event) {
+      MapFactory.Stations.resize();
       MapFactory.Map.resize();
       MapFactory.Map.render();
-      MapFactory.Stations.resize();
       MapFactory.Stations.render();
       MapFactory.Bikes.resize();
       MapFactory.Bikes.render();
