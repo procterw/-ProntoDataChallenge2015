@@ -182,6 +182,8 @@
         d.from_station_id = stationList[+d.from_station_id - 1];
         d.starttime = new Date((+d.starttime) * 60 * 1000 + timeShift);
         d.stoptime = new Date((+d.stoptime) * 60 * 1000 + timeShift);
+        d.age = new Date().getFullYear() - +d.birthyear;
+        delete d.birthyear;
       })
 
       return data;

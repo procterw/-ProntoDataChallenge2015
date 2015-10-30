@@ -25,9 +25,12 @@
     vm.timeStop = new Date(2014, 10, 18);
     vm.timeRange = [new Date(2014, 10, 16), new Date(2014, 10, 18)];
     vm.currentTime = 0;
-    vm.minpersec = 60;
+    vm.minpersec = 10;
 
     vm.hoveredStation = MapFactory.Stations.getHoveredStation;
+
+    vm.userType = "AO";
+    vm.userAge = "all";
 
     // Forms
     vm.subsetOptions = DataFactory.subsetOptions;
@@ -53,6 +56,7 @@
 
     function stop() {
       clearInterval(runningAnimation);
+      runningAnimation = false;
     }
 
     function initialize(trips, stations, weather, seattle) {
@@ -132,14 +136,19 @@
 
         // Remove day from the original subset
         var activeBikes = DataFactory.findTripStations(DataFactory.getDataBefore(dataSubset, vm.currentTime, true));
+        
         dataSubset = DataFactory.getDataAfter(dataSubset, vm.currentTime, true);
 
         // Rerender bikes
+        MapFactory.Bikes.setUserFilter(vm.userType);
+        MapFactory.Bikes.setAgeFilter(vm.userAge);
         MapFactory.Bikes.setTime(vm.currentTime);
         MapFactory.Bikes.addData(activeBikes);
         MapFactory.Bikes.render();
 
         // Rerender stations
+        MapFactory.Stations.setUserFilter(vm.userType);
+        MapFactory.Stations.setAgeFilter(vm.userAge);
         MapFactory.Stations.setTime(vm.currentTime);
         MapFactory.Stations.render("usage");
 
@@ -160,6 +169,15 @@
 
 
 
+
+
+    $scope.$watch(function() { return [vm.userType, vm.userAge]; }, function() {
+      if (!runningAnimation) {
+        MapFactory.Stations.setUserFilter(vm.userType);
+        MapFactory.Stations.setAgeFilter(vm.userAge);
+        MapFactory.Stations.render();
+      }
+    }, true);
 
 
 
