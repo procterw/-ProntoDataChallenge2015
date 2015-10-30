@@ -53,7 +53,6 @@
 
     function stop() {
       clearInterval(runningAnimation);
-      // MapFactory.Stations.reset();
     }
 
     function initialize(trips, stations, weather, seattle) {
@@ -114,6 +113,10 @@
 
         // When to stop interval
         if (vm.currentTime > vm.timeStop) {
+          // If it times out, actually clear all of the bike paths.
+          // This behavior isn't in the stop function because we keep paths when the
+          // animation is paused
+          MapFactory.Bikes.reset();
           vm.stop();
         }
 

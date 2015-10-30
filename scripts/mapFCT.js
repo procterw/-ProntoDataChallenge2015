@@ -51,6 +51,10 @@
       var mapCenterX = -122.3215;
       var mapCenterY = 47.63;
 
+      function scale(x, axis) {
+        return transforms.zoom * (transforms.translation[axis] + x);
+      }
+
       // Update x and y scales with new domain and range.
       // The domain has to change because we don't want it to scale down
       // at small sizes
@@ -155,6 +159,16 @@
 
       }
 
+    }
+
+
+    function zoom() {
+      transforms.translation = d3.event.translate;
+      transforms.zoom = d3.event.scale;
+      Factory.Bikes.resize();
+      Factory.Stations.render();
+      Factory.Map.render();
+      Factory.Bikes.render();
     }
 
 
@@ -311,6 +325,7 @@
       Stations.setTime = setTime;
       Stations.resize = resize;
       Stations.reset = reset;
+      Stations.getScales = getScales;
 
       Stations.getHoveredStation = getHoveredStation;
 
@@ -344,27 +359,6 @@
           $rootScope.$apply();
           render();
         }
-        // angular.forEach(_stations, function(p, i) {
-        //   var xd = x - _xScale(p.long);
-        //   var yd = y - _yScale(p.long);
-        //   var dist = Math.sqrt(Math.pow(xd, 2) + Math.pow(yd, 2));
-        //   if (dist < closestDist) {
-        //     xDist = xd;
-        //     yDist = yd;
-        //     closestDist = dist;
-        //     closestIndex = i;
-        //   }
-        // });
-        // var previousStation = _hoveredStation
-        // if (closestDist < 15) {
-        //   _hoveredStation = closestIndex;
-        // } else {
-        //   _hoveredStation = -1;
-        // }
-        // if (previousStation !== _hoveredStation) {
-        //   $rootScope.$apply();
-        //   render();
-        // };
       }
 
       function reset() {
@@ -449,22 +443,22 @@
         _xScale = scale.x;
         _yScale = scale.y;
 
-        _canvas.call(d3.behavior.zoom()
+        d3.selectAll(".canvas").call(d3.behavior.zoom()
           .x(_xScale)
           .y(_yScale)
           .scaleExtent([0.5, 2])
           .on("zoom", zoom));
-        init = false;
 
       }
 
-      function zoom() {
-        transforms.translation = d3.event.translate;
-        transforms.zoom = d3.event.scale;
-        render();
-        Factory.Map.render();
-        Factory.Bikes.render();
+      function getScales() {
+        return {
+          x: _xScale,
+          y: _yScale
+        }
       }
+
+      
 
       function clear() {
         _ctx.clearRect(0, 0, _width, _height);
@@ -569,9 +563,6 @@
 
 
 
-
-
-
     function Bikes(id) {
 
       var Bikes = this;
@@ -630,8 +621,8 @@
           var current = getCurrentLocation(d, _currentTime);
           var sameStation = d.from_station_id === d.to_station_id;
           return {
-            current: [_xScale(current[0]), _yScale(current[1]), current[2]],
-            start: [_xScale(d.startCoords[1]), _yScale(d.startCoords[0])],
+            current: [current[0], current[1], current[2]],
+            start: [d.startCoords[1], d.startCoords[0]],
             sameStation: sameStation,
             opacity: _currentTime > d.stoptime_min ? (pathFadeTime + d.stoptime_min - _currentTime) / pathFadeTime : 1
           };
@@ -663,7 +654,7 @@
         _canvas.style("width", _width / _retina + "px");
         _canvas.style("height", _height / _retina + "px");
 
-        var scale = makeXYScales(_width, _height, _retina);
+        var scale = Factory.Stations.getScales();
 
         _xScale = scale.x;
         _yScale = scale.y;
@@ -671,21 +662,23 @@
       }
 
       function reset() {
+        console.log("CALLING RESET")
+        _ctx.setTransform(1, 0, 0, 1, 0, 0);
         clear();
         _rawData = [];
         _positionData = [];
       }
 
       function clear() {
-        _ctx.clearRect(0, 0, _width, _height);
+        _ctx.clearRect(-200, -200, _width+200, _height+200);
       }
 
       function render() {
 
         clear();
         _ctx.save();
-        _ctx.translate(transforms.translation[0], transforms.translation[1]);
-        _ctx.scale(transforms.zoom * _retina, transforms.zoom * _retina);
+        // _ctx.translate(transforms.translation[0], transforms.translation[1]);
+        // _ctx.scale(transforms.zoom * _retina, transforms.zoom * _retina);
 
         _ctx.strokeStyle = _strokeScale(_currentTime);
         _ctx.lineWidth = 2;
@@ -702,12 +695,12 @@
 
           if (bike.sameStation) {
 
-            _ctx.arc(bike.start[0], bike.start[1], 14, -bike.current[2], 0);
+            _ctx.arc(_xScale(bike.start[0]), _yScale(bike.start[1]), 14, -bike.current[2], 0);
 
           } else {
 
-            _ctx.moveTo(bike.start[0], bike.start[1]);
-            _ctx.lineTo(bike.current[0], bike.current[1]);
+            _ctx.moveTo(_xScale(bike.start[0]), _yScale(bike.start[1]));
+            _ctx.lineTo(_xScale(bike.current[0]), _yScale(bike.current[1]));
 
           }
 
@@ -725,7 +718,7 @@
         }), function(bike) {
 
           _ctx.beginPath();
-          _ctx.arc(bike.start[0], bike.start[1], 14, -bike.current[2], 0);
+          _ctx.arc(_xScale(bike.start[0]), _yScale(bike.start[1]), 14, -bike.current[2], 0);
 
         });
 
@@ -734,23 +727,21 @@
           return bike.opacity === 1 && !bike.sameStation;
         }), function(bike) {
 
-          _ctx.moveTo(bike.start[0], bike.start[1]);
-          _ctx.lineTo(bike.current[0], bike.current[1]);
+          _ctx.moveTo(_xScale(bike.start[0]), _yScale(bike.start[1]));
+          _ctx.lineTo(_xScale(bike.current[0]), _yScale(bike.current[1]));
 
         });
 
         // Draw all active lines
         _ctx.stroke();
-
         
         _ctx.globalAlpha = 0.75;
-
 
         angular.forEach(_positionData.filter(function(bike) {
           return bike.opacity > 0.85;
         }), function(bike) {
           _ctx.beginPath();
-          _ctx.arc(bike.current[0], bike.current[1], 2, 0, Math.PI * 2);
+          _ctx.arc(_xScale(bike.current[0]), _yScale(bike.current[1]), 2, 0, Math.PI * 2);
           _ctx.fillStyle = "white";
           _ctx.fill();
         });
