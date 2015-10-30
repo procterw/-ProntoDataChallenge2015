@@ -331,24 +331,40 @@
         var x = d3.event.offsetX;
         var y = d3.event.offsetY;
         var closestDist = 999;
-        var closestIndex = -1;
-        angular.forEach(_stations, function(p, i) {
-          var dist = Math.sqrt(Math.pow(x - _xScale(p.long), 2) + Math.pow(y-_yScale(p.lat), 2));
-          if (dist < closestDist) {
-            closestDist = dist;
-            closestIndex = i;
-          }
+        var xDist = 999;
+        var yDist = 999;
+        var previousStation = _hoveredStation;
+        _hoveredStation = -1;
+        angular.forEach(_stations, function(s,i) {
+          if (isInBoundingRect(x,y,s)) {
+            _hoveredStation = i;
+          };
         });
-        var previousStation = _hoveredStation
-        if (closestDist < 12) {
-          _hoveredStation = closestIndex;
-        } else {
-          _hoveredStation = -1;
-        }
-        if (previousStation !== _hoveredStation) {
+        if (_hoveredStation !== previousStation) {
           $rootScope.$apply();
           render();
-        };
+        }
+        // angular.forEach(_stations, function(p, i) {
+        //   var xd = x - _xScale(p.long);
+        //   var yd = y - _yScale(p.long);
+        //   var dist = Math.sqrt(Math.pow(xd, 2) + Math.pow(yd, 2));
+        //   if (dist < closestDist) {
+        //     xDist = xd;
+        //     yDist = yd;
+        //     closestDist = dist;
+        //     closestIndex = i;
+        //   }
+        // });
+        // var previousStation = _hoveredStation
+        // if (closestDist < 15) {
+        //   _hoveredStation = closestIndex;
+        // } else {
+        //   _hoveredStation = -1;
+        // }
+        // if (previousStation !== _hoveredStation) {
+        //   $rootScope.$apply();
+        //   render();
+        // };
       }
 
       function reset() {
@@ -358,6 +374,20 @@
           s.departures = 0;
           s.arrivals = 0;
         });
+      }
+
+      // Is the given pair of coordinates inside of the bounding
+      // rectangle of a given station?
+      function isInBoundingRect(x,y,station) {
+
+        // Define bounding rectangle
+        var x1 = _xScale(station.long) - 8;
+        var x2 = _xScale(station.long) + 8;
+        var y1 = _yScale(station.lat) - Math.max(8, station.arrivals / 4);
+        var y2 = _yScale(station.lat) + Math.max(8, station.departures / 4);
+        
+        return x >= x1 && x <= x2 && y >= y1 && y <= y2;
+
       }
 
       function setStations(stations) {
@@ -451,7 +481,7 @@
         // _ctx.scale(transforms.zoom * _retina, transforms.zoom * _retina);
 
         // Math constants
-        var r = 10;
+        var r = 8;
         var T = 2 * Math.PI;
 
         _ctx.lineWidth = 1;
@@ -479,53 +509,7 @@
 
           if (_plotType === "usage") {
 
-            // var area = ((station.arrivals + station.departures) * 3) + 125;
-            // var r1 = Math.sqrt(area / Math.PI);
-
-            var activity = station.arrivals + station.departures;
-            // var ratio = station.arrivals / activity;
-
-            // var t1 = station.departures === 0 ? 0 : T;
-            // var t2 = activity == 0 ? 0 : T * ratio;
-
-            _ctx.globalAlpha = isHoveredStation ? 1 : 0.9;
-
-            // if (!activity) {
-            //   _ctx.beginPath();
-            //   _ctx.arc(x, y, r + addedSize, 0, T);
-            //   _ctx.fillStyle = _fillScale(_currentTime);
-            //   _ctx.fill();
-            //   _ctx.stroke();
-            // }
-
-            // // arrivals
-            // if (t2) {
-            //   _ctx.beginPath();
-            //   _ctx.fillStyle = "#73B1C9";
-            //   _ctx.moveTo(x,y);
-            //   _ctx.arc(x,y,r1 + addedSize, t1,t2,true);
-            //   _ctx.lineTo(x,y);
-            //   _ctx.fill();
-            //   _ctx.stroke();
-            // }
-
-            // // departures
-            // if (t1) {
-            //   _ctx.beginPath();
-            //   _ctx.fillStyle = "#E5715A";
-            //   _ctx.moveTo(x,y);
-            //   _ctx.arc(x,y,r1 + addedSize,t2,T,true);
-            //   _ctx.lineTo(x,y);
-            //   _ctx.fill();
-            //   _ctx.stroke();
-            // }
-
-            // var area1 = station.arrivals === 0 ? 75 : (station.arrivals * 4) + 125;
-            // var area2 = station.departures === 0 ? 75 : (station.departures * 4) + 125;
-
-            // var r1 = Math.sqrt(area1 / Math.PI);
-            // var r2 = Math.sqrt(area2 / Math.PI);
-            // var dist = Math.max(r1,r2)/3;
+           
 
             function drawblank() {
               _ctx.beginPath();
@@ -535,48 +519,18 @@
               _ctx.stroke();
             }
 
-            // function drawdepartures() {
-            
-            //   _ctx.beginPath();
-            //   _ctx.fillStyle = "#E5715A";
-            //   _ctx.arc(x-dist,y,r2 + addedSize,0,T,true);
-            //   _ctx.fill();
-            //   _ctx.stroke();
-            
-            // }
+            var r = 5;
 
-
-            // function drawarrivals() {
-
-            //   _ctx.beginPath();
-            //   _ctx.fillStyle = "#73B1C9";
-            //   _ctx.arc(x+dist,y,r1 + addedSize,0,T,true);
-            //   _ctx.fill();
-            //   _ctx.stroke();
-
-            // }
-
-            var r = 8;
-
-            // var h1 = Math.log(station.arrivals) / Math.log(2) * 5;
-            // var h2 = Math.log(station.departures) / Math.log(2) * 5;
-
-            function drawHalfCircle() {
-              // _ctx.beginPath();
-              // _ctx.arc(x, y, r + addedSize, 0, T/2);
-              // _ctx.fillStyle = _fillScale(_currentTime);
-              // _ctx.fill();
-              // _ctx.stroke();
-            }
+            var spacing = isHoveredStation ? 3 : 2;
 
             function drawarrivals() {
 
               _ctx.fillStyle = "#73B1C9";
 
               for (var i=0; i<station.arrivals; i++) {
-                var col=i%8;
-                var row=Math.floor(i/8);
-                _ctx.fillRect(x + col*2 - 8, y - row*2, 2, -2)
+                var col=i%10;
+                var row=Math.floor(i/10);
+                _ctx.fillRect(x + col*spacing - (5 * spacing), y - row*spacing, 2, -2)
               }
             
             }
@@ -586,40 +540,25 @@
               _ctx.fillStyle = "#E5715A";
 
               for (var i=0; i<station.departures; i++) {
-                var col=i%8;
-                var row=Math.floor(i/8);
-                _ctx.fillRect(x + col*2 - 8, y + row*2, 2, 2)
+                var col=i%10;
+                var row=Math.floor(i/10);
+                _ctx.fillRect(x + col*spacing - (5 * spacing), y + row*spacing, 2, 2)
               }
             
         
             }
 
-            drawblank(x,y,r)
-              drawarrivals()
-              drawdepartures()
-  
-            
-            // if (!station.arrivals && !station.departures) {
-              
-            // } else if (station.arrivals < station.departures) {
-            //   drawHalfCircle()
 
-            // } else {
-            //   drawHalfCircle()
-            //   drawdepartures()
-            //   drawarrivals()
-            // }
+             _ctx.globalAlpha = isHoveredStation ? 1 : 0.8;
+            drawarrivals()
+            drawdepartures()
+            drawblank(x,y,r)
 
           }
 
         }
 
-        // Restore previous state
-        
-
-
       }
-
 
     }
 
@@ -811,7 +750,7 @@
           return bike.opacity > 0.85;
         }), function(bike) {
           _ctx.beginPath();
-          _ctx.arc(bike.current[0], bike.current[1], 3, 0, Math.PI * 2);
+          _ctx.arc(bike.current[0], bike.current[1], 2, 0, Math.PI * 2);
           _ctx.fillStyle = "white";
           _ctx.fill();
         });
