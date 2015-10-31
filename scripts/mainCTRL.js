@@ -90,6 +90,7 @@
     function animateQuery() {
 
       MapFactory.Bikes.reset();
+      MapFactory.Bikes.resize();
       MapFactory.Stations.reset();
 
       // Data subset based on query object

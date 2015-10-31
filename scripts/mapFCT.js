@@ -237,6 +237,8 @@
         _canvas.style("width", _width / _retina + "px");
         _canvas.style("height", _height / _retina + "px");
 
+        _ctx.scale(_retina,_retina)
+
         var scale = Factory.Stations.getScales();
 
         _xScale = scale.x;
@@ -460,6 +462,8 @@
         _canvas.style("height", _height / _retina + "px");
 
         var scale = makeXYScales(_width, _height, _retina);
+
+        _ctx.scale(_retina,_retina)
 
         _xScale = scale.x;
         _yScale = scale.y;
@@ -720,6 +724,8 @@
 
         _canvas.style("width", _width / _retina + "px");
         _canvas.style("height", _height / _retina + "px");
+
+        _ctx.scale(_retina,_retina)
 
         var scale = Factory.Stations.getScales();
 
