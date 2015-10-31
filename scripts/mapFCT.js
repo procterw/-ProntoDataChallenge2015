@@ -212,7 +212,7 @@
 
       function setColorScales(sunriset) {
         // sunriset, night color, day color
-        _fillScale = makeSunScale(sunriset, "#3F3C3A", "#E2DCD5");
+        _fillScale = makeSunScale(sunriset, "#3F3C3A", "#E0D7CE");
         _strokeScale = makeSunScale(sunriset, "#454545", "#F7F7F7");
       }
 
@@ -414,7 +414,8 @@
               s.bikeCount--;
               s.departures.push({
                 age: d.age,
-                usertype: d.usertype
+                usertype: d.usertype,
+                time: _currentTime
               })
             }
           });
@@ -427,7 +428,8 @@
             s.bikeCount++;
             s.arrivals.push({
               age: age,
-              usertype: usertype
+              usertype: usertype,
+              time: _currentTime
             })
           }
         });
@@ -499,7 +501,7 @@
         var T = 2 * Math.PI;
 
         _ctx.lineWidth = 1;
-        _ctx.strokeStyle = _strokeScale(_currentTime);
+        _ctx.strokeStyle = _strokeScale ? _strokeScale(_currentTime) : "#CCC";
 
         for (var i = 0; i < _stations.length; i++) {
 
@@ -514,7 +516,7 @@
             var age = _ageFilter === "all" || d.age === _ageFilter;
             return user && age;
           }).length;
-          
+
           var departures = station.departures.filter(function(d) {
             var user = _userFilter === "AO" || d.usertype === _userFilter;
             var age = _ageFilter === "all" || d.age === _ageFilter;

@@ -25,7 +25,7 @@
     vm.timeStop = new Date(2014, 10, 18);
     vm.timeRange = [new Date(2014, 10, 16), new Date(2014, 10, 18)];
     vm.currentTime = 0;
-    vm.minpersec = 50;
+    vm.minpersec = 15;
 
     vm.hoveredStation = MapFactory.Stations.getHoveredStation;
 
@@ -55,7 +55,7 @@
     var runningAnimation;
 
     function stop() {
-      clearInterval(runningAnimation);
+      window.cancelAnimationFrame(runningAnimation);
       runningAnimation = false;
     }
 
@@ -65,10 +65,10 @@
       MapFactory.Map.setColorScales([[5,0],[18,0]]);
 
       MapFactory.Bikes.setColorScale([[5,0],[18,0]]);
-      // MapFactory.Bikes.render();
 
-      MapFactory.Stations.setStations(stations);
       MapFactory.Stations.setColorScale([[5,0],[18,0]]);
+      MapFactory.Stations.setStations(stations);
+      
 
       resize();
 
@@ -117,16 +117,18 @@
       // Starting time of animation
       var animationStart = new Date();
 
+      runningAnimation = window.requestAnimationFrame(run);
+
       function run() {
 
-        // When to stop interval
-        if (vm.currentTime > vm.timeStop) {
-          // If it times out, actually clear all of the bike paths.
-          // This behavior isn't in the stop function because we keep paths when the
-          // animation is paused
-          MapFactory.Bikes.reset();
-          vm.stop();
-        }
+        // // When to stop interval
+        // if (vm.currentTime > vm.timeStop) {
+        //   // If it times out, actually clear all of the bike paths.
+        //   // This behavior isn't in the stop function because we keep paths when the
+        //   // animation is paused
+        //   MapFactory.Bikes.reset();
+        //   vm.stop();
+        // }
 
         // How long has the animation actually been running for
         var animationElapsed = (new Date()).getTime() - animationStart.getTime();
@@ -160,9 +162,11 @@
         // Change background color
         vm.waterColor = MapFactory.Water.getColor(vm.currentTime % (24 * 60));
 
+        if (vm.currentTime < vm.timeStop) runningAnimation = window.requestAnimationFrame(run);
+
       }
 
-      runningAnimation = setInterval(run, vm.framerate);
+      
 
     }
 
@@ -325,11 +329,6 @@
    //    });
 
   	// }
-
-
-
-
-
 
 
 
