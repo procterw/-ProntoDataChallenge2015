@@ -129,14 +129,12 @@
         t2 = +trip.stoptime_min; // time in minutes
         dt = time - t1;
 
-        var r = 0.0015;
-
         // How far around?
         var theta = Math.PI * 2 * (dt / (t2 - t1));
 
         return [
-          trip.startCoords[1] + (Math.cos(theta) * r),
-          trip.startCoords[0] + (Math.sin(theta) * r),
+          trip.startCoords[1] + (Math.cos(theta) * 0.0018),
+          trip.startCoords[0] + (Math.sin(theta) * 0.0012),
           theta
         ];
 
@@ -369,19 +367,12 @@
         }
       }
 
-      // Departure and arrival filters are matrices
-      //        annual  shortterm
-      // old    0       0
-      // young  0       0
-
       function reset() {
         clear();
         _stations.forEach(function(s) {
           s.bikeCount = 0;
-          s.departures = 0;
-          s.arrivals = 0;
-          s.departuresFiltered = [[0,0],[0,0]] ;
-          s.arrivalsFiltered = [[0,0],[0,0]] ;
+          s.departures = [];
+          s.arrivals = [];
         });
       }
 
@@ -392,8 +383,8 @@
         // Define bounding rectangle
         var x1 = _xScale(station.long) - 8;
         var x2 = _xScale(station.long) + 8;
-        var y1 = _yScale(station.lat) - Math.max(8, station.arrivals / 4);
-        var y2 = _yScale(station.lat) + Math.max(8, station.departures / 4);
+        var y1 = _yScale(station.lat) - Math.max(8, station.arrivals.length / 4);
+        var y2 = _yScale(station.lat) + Math.max(8, station.departures.length / 4);
         
         return x >= x1 && x <= x2 && y >= y1 && y <= y2;
 
@@ -421,25 +412,23 @@
           _stations.forEach(function(s) {
             if (s.terminal === d.from_station_id) {
               s.bikeCount--;
-              s.departures++;
-              d.usertype === "A" ? s.departuresAnnual++ : s.departuresShort++;
-              var age = d.age > 34 ? "old" : (isNaN(age) ? "nan" : "young");
-              if (age === "old") s.departuresOld++;
-              if (age === "young") s.departuresYoung++;
+              s.departures.push({
+                age: d.age,
+                usertype: d.usertype
+              })
             }
           });
         });
       }
 
-      function addBike(terminal, usertype,age) {
+      function addBike(terminal,usertype,age) {
         _stations.forEach(function(s) {
           if (s.terminal === terminal) {
             s.bikeCount++;
-            s.arrivals++;
-            usertype === "A" ? s.arrivalsAnnual++ : s.arrivalsShort++;
-            var age = age > 34 ? "old" : (isNaN(age) ? "nan" : "young");
-            if (age === "old") s.arrivalsOld++;
-            if (age === "young") s.arrivalsYoung++;
+            s.arrivals.push({
+              age: age,
+              usertype: usertype
+            })
           }
         });
       }
@@ -471,7 +460,7 @@
         d3.selectAll(".canvas").call(d3.behavior.zoom()
           .x(_xScale)
           .y(_yScale)
-          .scaleExtent([0.5, 2])
+          .scaleExtent([0.7, 4])
           .on("zoom", zoom));
 
       }
@@ -520,22 +509,17 @@
 
           var station = _stations[i];
 
-          var departures, arrivals;
-
-
-          switch (_userFilter) {
-            case "A":
-              departures = station.departuresAnnual;
-              arrivals = station.arrivalsAnnual;
-              break
-            case "O":
-              departures = station.departuresShort;
-              arrivals = station.arrivalsShort;
-              break
-            default:
-              departures = station.departures;
-              arrivals = station.arrivals;
-          }
+          var arrivals = station.arrivals.filter(function(d) {
+            var user = _userFilter === "AO" || d.usertype === _userFilter;
+            var age = _ageFilter === "all" || d.age === _ageFilter;
+            return user && age;
+          }).length;
+          
+          var departures = station.departures.filter(function(d) {
+            var user = _userFilter === "AO" || d.usertype === _userFilter;
+            var age = _ageFilter === "all" || d.age === _ageFilter;
+            return user && age;
+          }).length;
 
           // Canvas xy coordinates for rendering
           var x = _xScale(+station.long);
@@ -678,16 +662,7 @@
           };
         }).filter(function(d) {
           var user = _userFilter === "AO" || d.usertype === _userFilter;
-          var age;
-          if (_ageFilter === "all") {
-            age = true;
-          } else if (isNaN(d.age)) {
-            age = false
-          } else if (_ageFilter === "old") {
-            age = d.age > 34;
-          } else if (_ageFilter === "young") {
-            age = d.age < 35;
-          }
+          var age = _ageFilter === "all" || d.age === _ageFilter;
           return user && age;
         });
 
@@ -766,14 +741,10 @@
           _ctx.beginPath();
 
           if (bike.sameStation) {
-
-            _ctx.arc(_xScale(bike.start[0]), _yScale(bike.start[1]), 14, -bike.current[2], 0);
-
+            _ctx.arc(_xScale(bike.start[0]), _yScale(bike.start[1]), 14*transforms.zoom, -bike.current[2], 0);
           } else {
-
             _ctx.moveTo(_xScale(bike.start[0]), _yScale(bike.start[1]));
             _ctx.lineTo(_xScale(bike.current[0]), _yScale(bike.current[1]));
-
           }
 
           _ctx.stroke();
@@ -784,36 +755,33 @@
         // Active bikes always have opacity 0.15
         _ctx.globalAlpha = 0.15;
 
-        // Active bike lines
+        // Active bike lines, DIFFERENT station
         angular.forEach(_positionData.filter(function(bike) {
           return bike.opacity === 1 && bike.sameStation;
         }), function(bike) {
-
           _ctx.beginPath();
-          _ctx.arc(_xScale(bike.start[0]), _yScale(bike.start[1]), 14, -bike.current[2], 0);
-
+          _ctx.arc(_xScale(bike.start[0]), _yScale(bike.start[1]), 14*transforms.zoom, -bike.current[2], 0);
         });
 
-        // Active bike lines
+        // Active bike lines, SAME station
         angular.forEach(_positionData.filter(function(bike) {
           return bike.opacity === 1 && !bike.sameStation;
         }), function(bike) {
-
           _ctx.moveTo(_xScale(bike.start[0]), _yScale(bike.start[1]));
           _ctx.lineTo(_xScale(bike.current[0]), _yScale(bike.current[1]));
 
         });
 
-        // Draw all active lines
         _ctx.stroke();
         
-        _ctx.globalAlpha = 0.75;
 
+        // Draw active bikes
+        _ctx.globalAlpha = 0.75;
         angular.forEach(_positionData.filter(function(bike) {
-          return bike.opacity > 0.85;
+          return bike.opacity > 0.95;
         }), function(bike) {
           _ctx.beginPath();
-          _ctx.arc(_xScale(bike.current[0]), _yScale(bike.current[1]), 2, 0, Math.PI * 2);
+          _ctx.arc(_xScale(bike.current[0]), _yScale(bike.current[1]), 3, 0, Math.PI * 2);
           _ctx.fillStyle = "white";
           _ctx.fill();
         });

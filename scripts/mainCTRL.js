@@ -25,7 +25,7 @@
     vm.timeStop = new Date(2014, 10, 18);
     vm.timeRange = [new Date(2014, 10, 16), new Date(2014, 10, 18)];
     vm.currentTime = 0;
-    vm.minpersec = 10;
+    vm.minpersec = 50;
 
     vm.hoveredStation = MapFactory.Stations.getHoveredStation;
 
@@ -117,7 +117,7 @@
       // Starting time of animation
       var animationStart = new Date();
 
-      runningAnimation = setInterval(function() {
+      function run() {
 
         // When to stop interval
         if (vm.currentTime > vm.timeStop) {
@@ -160,9 +160,9 @@
         // Change background color
         vm.waterColor = MapFactory.Water.getColor(vm.currentTime % (24 * 60));
 
+      }
 
-
-      }, framerate);
+      runningAnimation = setInterval(run, vm.framerate);
 
     }
 

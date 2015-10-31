@@ -45,8 +45,8 @@
 			<h4>{{main.hoveredStation().name}}</h4>
 			<ul class="station-list" ng-hide="!main.hoveredStation()">
 				<li>Docks <b>{{main.hoveredStation().dockcount}}</b></li>
-				<li>Departures <b>{{main.hoveredStation().departures}}</b></li>
-				<li>Arrivals <b>{{main.hoveredStation().arrivals}}</b></li>
+				<li>Departures <b>{{main.hoveredStation().departures.length}}</b></li>
+				<li>Arrivals <b>{{main.hoveredStation().arrivals.length}}</b></li>
 			</ul>
 		</div>
 

@@ -46,13 +46,7 @@
       {name: "Thursdays", val:4},
       {name: "Fridays", val:5},
       {name: "Saturdays", val:6},
-      {name: "Sundays", val:0},
-      // {name: "Sunny Days", val:"sunny"},
-      // {name: "Cloudy Days", val:"cloudy"},
-      {name: "Rainy Days", val:"rainy"},
-      {name: "Hot Days (>70)", val:"hot"},
-      {name: "Cold Days (<35)", val:"cold"},
-      {name: "Windy Days", val:"windy"}
+      {name: "Sundays", val:0}
     ];
 
     Factory.monthOptions = [
@@ -87,14 +81,14 @@
 				d3.csv("clean_data/stations.csv", function(stations) {
 					d3.csv("clean_data/weather.csv", function(weather) {
 						d3.json("clean_data/Neighborhoods.json", function(error, geojson) {
-              d3.csv("clean_data/statuses.csv", function(statuses) {
-                statusString = cleanStatuses(statuses);
+              // d3.csv("clean_data/statuses.csv", function(statuses) {
+                // statusString = cleanStatuses(statuses);
                 Factory.trips = cleanTripData(trips, stations);
                 Factory.stations = stations;
                 Factory.weather = cleanWeatherData(weather);
                 Factory.seattle = unpackTopoJSON(geojson);
                 callback(trips, stations, weather, Factory.seattle);
-              })
+              // })
 						});
 					});
 				});
@@ -182,7 +176,8 @@
         d.from_station_id = stationList[+d.from_station_id - 1];
         d.starttime = new Date((+d.starttime) * 60 * 1000 + timeShift);
         d.stoptime = new Date((+d.stoptime) * 60 * 1000 + timeShift);
-        d.age = new Date().getFullYear() - +d.birthyear;
+        var age = new Date().getFullYear() - +d.birthyear;
+        d.age = age < 35 ? "young" : (age > 34 ? "old" : null);
         delete d.birthyear;
       })
 
