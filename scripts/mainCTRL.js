@@ -62,14 +62,13 @@
     function initialize(trips, stations, weather, seattle) {
 
       MapFactory.Map.setCoordinates(seattle);
-      MapFactory.Map.setColorScales([[5,0],[18,0]]);
+      MapFactory.Map.setColorScales([6*60,18*60]);
 
-      MapFactory.Bikes.setColorScale([[5,0],[18,0]]);
+      MapFactory.Bikes.setColorScale([6*60,18*60]);
 
-      MapFactory.Stations.setColorScale([[5,0],[18,0]]);
+      MapFactory.Stations.setColorScale([6*60,18*60]);
       MapFactory.Stations.setStations(stations);
       
-
       resize();
 
     };
@@ -86,6 +85,9 @@
       MapFactory.Bikes.render();
     };
 
+    // track the time of day
+    var timeOfDay = "night";
+    var newTimeOfDay = "night";
 
     function animateQuery() {
 
@@ -107,7 +109,9 @@
       MapFactory.Map.setColorScales(sunriset);
       MapFactory.Bikes.setColorScale(sunriset);
       MapFactory.Stations.setColorScale(sunriset);
-      MapFactory.Water.setColorScale(sunriset);
+
+      // Initialize active bikes
+      var activeBikes = [];
 
       // Set start and stop time in minutes and currentTime to 0
       vm.timeStart = 0;
@@ -119,26 +123,32 @@
 
       runningAnimation = window.requestAnimationFrame(run);
 
+      // track the time of day
+      timeOfDay = "night";
+
+      var water = d3.select(".canvas-wrapper");
+
       function run() {
 
-        // // When to stop interval
-        // if (vm.currentTime > vm.timeStop) {
-        //   // If it times out, actually clear all of the bike paths.
-        //   // This behavior isn't in the stop function because we keep paths when the
-        //   // animation is paused
-        //   MapFactory.Bikes.reset();
-        //   vm.stop();
-        // }
-
-        // How long has the animation actually been running for
-        var animationElapsed = (new Date()).getTime() - animationStart.getTime();
-
         // Update the current "real world" time
-        vm.currentTime = vm.minpersec * (animationElapsed / 1000);
+        vm.currentTime = vm.minpersec * (((new Date()).getTime() - animationStart.getTime()) / 1000);
+        if (vm.currentTime > vm.timeStop) vm.currentTime = vm.timeStop;
+
         $scope.$apply();
 
+        // Get the new time of day
+        if (vm.currentTime < sunriset[1] - 60 || vm.currentTime > sunriset[0] - 60) {
+          newTimeOfDay = "night";
+        } else {
+          newTimeOfDay = "day";
+        }
+
+        if (newTimeOfDay !== timeOfDay && newTimeOfDay === "night") water.attr("class", "canvas-wrapper");
+        if (newTimeOfDay !== timeOfDay && newTimeOfDay === "day") water.attr("class", "canvas-wrapper day");
+        if (newTimeOfDay !== timeOfDay) timeOfDay = newTimeOfDay;
+
         // Remove day from the original subset
-        var activeBikes = DataFactory.findTripStations(DataFactory.getDataBefore(dataSubset, vm.currentTime, true));
+        activeBikes = DataFactory.findTripStations(DataFactory.getDataBefore(dataSubset, vm.currentTime, true));
         
         dataSubset = DataFactory.getDataAfter(dataSubset, vm.currentTime, true);
 
@@ -156,11 +166,12 @@
         MapFactory.Stations.render("usage");
 
         // Rerender map
+        var newFill = MapFactory.Map.needsNewFill(vm.currentTime);
         MapFactory.Map.setTime(vm.currentTime);
-        MapFactory.Map.render();
+        if (newFill) MapFactory.Map.render();
 
         // Change background color
-        vm.waterColor = MapFactory.Water.getColor(vm.currentTime % (24 * 60));
+        // vm.waterColor = MapFactory.Water.getColor(vm.currentTime % (24 * 60));
 
         if (vm.currentTime < vm.timeStop) runningAnimation = window.requestAnimationFrame(run);
 

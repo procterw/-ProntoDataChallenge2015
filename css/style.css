@@ -96,6 +96,11 @@ h2, h3 {
 	margin-left: 300px;
 	position: relative;
 	/*box-shadow: 0 0 5px 1px rgba(0,0,0,0.15);*/
+	transition: background-color 6s linear;
+}
+
+.canvas-wrapper.day {
+	background-color: #BAD3D0;
 }
 
 .canvas,
@@ -106,7 +111,9 @@ h2, h3 {
 	left: 0;
 	right: 0;
 	position: absolute;
+	
 }
+
 
 
 /**/

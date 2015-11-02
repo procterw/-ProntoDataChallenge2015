@@ -159,8 +159,8 @@
       angular.forEach(data, function(d) {
         d.Precipitation_In = +d.Precipitation_In;
         d.Date = new Date((+d.Date) * 60 * 1000 + timeShift);
-        d.sunrise = [+d.sunrise.split(":")[0] - 4,+d.sunrise.split(":")[1]];
-        d.sunset = [+d.sunset.split(":")[0] - 4,+d.sunset.split(":")[1]];
+        d.sunrise = 60 * (+d.sunrise.split(":")[0] - 4) + (+d.sunrise.split(":")[1]);
+        d.sunset = 60 * (+d.sunset.split(":")[0] - 4) + (+d.sunset.split(":")[1]);
       });
       return data;
     }

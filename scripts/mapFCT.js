@@ -17,7 +17,6 @@
 
     // Factory.setTime = function(time) { _currentTime = time; }
 
-    Factory.Water = new Water();
     Factory.Map = new Map("#mapCanvas");
     Factory.Stations = new Stations("#stationCanvas");
     Factory.Bikes = new Bikes("#bikeCanvas");
@@ -67,12 +66,20 @@
         ])
         .range([0, width / retina]);
 
+      xScale.round = function(x) {
+        return Math.round(this(x));
+      }
+
       var yScale = d3.scale.linear()
         .domain([
           mapCenterY - 0.011 * (height / screenScale) / retina,
           mapCenterY + 0.011 * (height / screenScale) / retina
         ])
         .range([height / retina, 0]);
+
+      yScale.round = function(y) {
+        return Math.round(this(y));
+      }
 
       return {
         x: xScale,
@@ -84,34 +91,11 @@
     function makeSunScale(sunriset, night, day) {
       var sunrise = sunriset[1];
       var sunset = sunriset[0];
-      sunrise = sunrise[0] * 60 + sunrise[1]; // which minute of day is it
-      sunset = sunset[0] * 60 + sunset[1]; // which minute of day is it
       return d3.scale.linear()
         .domain([0, sunrise - 60, sunrise + 60, sunset - 60, sunset + 60, (25 * 60)])
         .range([night, night, day, day, night, night]);
     }
 
-
-
-    function Water() {
-
-      var Water = this;
-
-      var _fillScale;
-
-      Water.setColorScale = setColorScale;
-      Water.getColor = getColor;
-
-      function setColorScale(sunriset) {
-        // sunriset, night color, day color
-        _fillScale = makeSunScale(sunriset, "#3A4851", "#BAD3D0");
-      }
-
-      function getColor(time) {
-        return _fillScale(time);
-      }
-
-    }
 
 
 
@@ -202,6 +186,8 @@
       Map.setTime = setTime;
       Map.resize = resize;
 
+      Map.needsNewFill = needsNewFill;
+
       Map.render = render;
 
       return Map;
@@ -218,6 +204,10 @@
 
       function setTime(time) {
         _currentTime = time;
+      }
+
+      function needsNewFill(time) {
+        return _fillScale(time) !== _fillScale(_currentTime);
       }
 
       function resize() {
@@ -266,20 +256,22 @@
         // ctx.beginPath();
         // For each polygon, move the line path and continue drawing until
         // that poylgon is finished
+        _ctx.beginPath();
+
         for (var i = 0; i < _coordinates.length; i++) {
 
           var polygon = _coordinates[i];
-          _ctx.beginPath();
-          _ctx.moveTo(_xScale(polygon[0].x), _yScale(polygon[0].y));
+          
+          _ctx.moveTo(_xScale.round(polygon[0].x), _yScale.round(polygon[0].y));
 
           for (var k = 1; k < polygon.length; k++) {
-            _ctx.lineTo(_xScale(polygon[k].x), _yScale(polygon[k].y));
+            _ctx.lineTo(_xScale.round(polygon[k].x), _yScale.round(polygon[k].y));
           }
 
-          _ctx.fill();
-          _ctx.stroke();
-
         }
+
+        _ctx.fill();
+        _ctx.stroke();
 
         // Restore previous state
         _ctx.restore();
@@ -524,8 +516,8 @@
           }).length;
 
           // Canvas xy coordinates for rendering
-          var x = _xScale(+station.long);
-          var y = _yScale(+station.lat);
+          var x = _xScale.round(+station.long);
+          var y = _yScale.round(+station.lat);
 
           // Initial plot
           if (!_plotType) {
@@ -732,27 +724,30 @@
         _ctx.strokeStyle = _strokeScale(_currentTime);
         _ctx.lineWidth = 2;
 
+        _ctx.save();
+
         // Draw the fading lines
         angular.forEach(_positionData.filter(function(bike) {
           return bike.opacity < 1;
         }), function(bike) {
 
           // Each fading bike has a different opacity which is some fraction of 0.15
-          _ctx.save();
-          _ctx.globalAlpha = Math.round(100 * bike.opacity * 0.15) / 100;
+          
+          _ctx.globalAlpha = Math.round(50 * bike.opacity * 0.15) / 50;
           _ctx.beginPath();
 
           if (bike.sameStation) {
-            _ctx.arc(_xScale(bike.start[0]), _yScale(bike.start[1]), 14*transforms.zoom, -bike.current[2], 0);
+            _ctx.arc(_xScale.round(bike.start[0]), _yScale.round(bike.start[1]), 14*transforms.zoom, -bike.current[2], 0);
           } else {
-            _ctx.moveTo(_xScale(bike.start[0]), _yScale(bike.start[1]));
-            _ctx.lineTo(_xScale(bike.current[0]), _yScale(bike.current[1]));
+            _ctx.moveTo(_xScale.round(bike.start[0]), _yScale.round(bike.start[1]));
+            _ctx.lineTo(_xScale.round(bike.current[0]), _yScale.round(bike.current[1]));
           }
 
           _ctx.stroke();
-          _ctx.restore();
-
+          
         });
+
+        _ctx.restore();
 
         // Active bikes always have opacity 0.15
         _ctx.globalAlpha = 0.15;
@@ -762,15 +757,15 @@
           return bike.opacity === 1 && bike.sameStation;
         }), function(bike) {
           _ctx.beginPath();
-          _ctx.arc(_xScale(bike.start[0]), _yScale(bike.start[1]), 14*transforms.zoom, -bike.current[2], 0);
+          _ctx.arc(_xScale.round(bike.start[0]), _yScale.round(bike.start[1]), 14*transforms.zoom, -bike.current[2], 0);
         });
 
         // Active bike lines, SAME station
         angular.forEach(_positionData.filter(function(bike) {
           return bike.opacity === 1 && !bike.sameStation;
         }), function(bike) {
-          _ctx.moveTo(_xScale(bike.start[0]), _yScale(bike.start[1]));
-          _ctx.lineTo(_xScale(bike.current[0]), _yScale(bike.current[1]));
+          _ctx.moveTo(_xScale.round(bike.start[0]), _yScale.round(bike.start[1]));
+          _ctx.lineTo(_xScale.round(bike.current[0]), _yScale.round(bike.current[1]));
 
         });
 
@@ -783,11 +778,10 @@
           return bike.opacity > 0.95;
         }), function(bike) {
           _ctx.beginPath();
-          _ctx.arc(_xScale(bike.current[0]), _yScale(bike.current[1]), 3, 0, Math.PI * 2);
+          _ctx.arc(_xScale.round(bike.current[0]), _yScale.round(bike.current[1]), 3, 0, Math.PI * 2);
           _ctx.fillStyle = "white";
           _ctx.fill();
         });
-
         
 
         _ctx.restore();

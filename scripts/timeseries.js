@@ -56,7 +56,7 @@ angular.module('App')
 
           var xScale = d3.scale.linear()
             .domain([0,24 * 60])
-            .range([10,width-10]);
+            .range([3,width-3]);
 
           var departureTimes = station.departures.filter(function(d) {
             var user = userFilter === "AO" || d.usertype === userFilter;
@@ -80,27 +80,37 @@ angular.module('App')
           var arrivalsHist = d3.layout.histogram()
             .bins(xScale.ticks(12*24))(arrivalTimes);
 
-          ctx.fillStyle = "rgba(0,0,0,0.1)"
+          ctx.fillStyle = "rgba(0,0,0,0.5)"
           ctx.fillRect(0,0,xScale($scope.main.currentTime),height);
 
+          ctx.beginPath();
+          ctx.moveTo(1,0);
+          ctx.lineTo(1,height);
+          ctx.moveTo(1, height/2);
+          ctx.lineTo(width, height/2);
+          ctx.moveTo(width-1,0);
+          ctx.lineTo(width-1,height);
+          ctx.strokeStyle = "white";
+          ctx.stroke();
+
           ctx.fillStyle = "white"
-          var times = ["4","7","10","1","4","7","10","1","4"];
-          // Draw ticks
-          for (var i=0; i < 9; i++) {
-            ctx.font="8px Helvetica";
-            ctx.fillText(times[i],xScale(i*180),33);
-          }
+          // var times = ["4","7","10","1","4","7","10","1","4"];
+          // // Draw ticks
+          // for (var i=0; i < 9; i++) {
+          //   ctx.font="8px Helvetica";
+          //   ctx.fillText(times[i],xScale(i*180),33);
+          // }
 
           angular.forEach(departuresHist, function(t) {
               ctx.beginPath();
               ctx.fillStyle = "#DB6E63";
-              ctx.fillRect(xScale(t.x),36,2,t.y*3);
+              ctx.fillRect(xScale(t.x),32,2,t.y*4);
           })
 
           angular.forEach(arrivalsHist, function(t) {
               ctx.beginPath();
               ctx.fillStyle = "#73B1C9";
-              ctx.fillRect(xScale(t.x),24,2,-t.y*3);
+              ctx.fillRect(xScale(t.x),28,2,-t.y*4);
           })
 
 
