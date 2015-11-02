@@ -66,8 +66,9 @@
         ])
         .range([0, width / retina]);
 
+      // Round values to the nearest 1/2
       xScale.round = function(x) {
-        return Math.round(this(x));
+        return Math.round(this(x) * 2) / 2;
       }
 
       var yScale = d3.scale.linear()
@@ -77,8 +78,9 @@
         ])
         .range([height / retina, 0]);
 
+      // Round values to the nearest 1/2
       yScale.round = function(y) {
-        return Math.round(this(y));
+        return Math.round(this(y) * 2) / 2;
       }
 
       return {
@@ -540,35 +542,67 @@
 
             var r = 5;
 
-            var spacing = isHoveredStation ? 3 : 2;
+            // var spacing = isHoveredStation ? 3 : 2;
 
-            function drawarrivals() {
+            var rowLength = 12;
+            var sqSide = 2; // square side in pixels
 
+            // Number of rows
+            var nrowArrivals = Math.floor(arrivals / rowLength);
+            var nrowDepartures = Math.floor(departures / rowLength);
+            var remainderArrivals = arrivals % rowLength;
+            var remainderDepartures = departures % rowLength;
+
+            function drawArrivals() {
               _ctx.fillStyle = "#73B1C9";
-
-              for (var i=0; i<arrivals; i++) {
-                var col=i%10;
-                var row=Math.floor(i/10);
-                _ctx.fillRect(x + col*spacing - (5 * spacing), y - row*spacing, 2, -2)
+              // draw big row
+              if (nrowArrivals > 0) {
+                _ctx.fillRect(x - (rowLength/2*sqSide), y, rowLength*sqSide, -(nrowArrivals)*sqSide);
               }
-            
+              if (remainderArrivals > 0) {
+                _ctx.fillRect(x - (rowLength/2*sqSide), y - (nrowArrivals)*sqSide, remainderArrivals*sqSide, -sqSide);
+              }
             }
 
-            function drawdepartures() {
-
+            function drawDepartures() {
               _ctx.fillStyle = "#E5715A";
-
-              for (var i=0; i<departures; i++) {
-                var col=i%10;
-                var row=Math.floor(i/10);
-                _ctx.fillRect(x + col*spacing - (5 * spacing), y + row*spacing, 2, 2)
+              // draw big row
+              if (nrowDepartures > 0) {
+                _ctx.fillRect(x - (rowLength/2*sqSide), y, rowLength*sqSide, (nrowDepartures)*sqSide);
               }
-            
+              if (remainderDepartures > 0) {
+                _ctx.fillRect(x - (rowLength/2*sqSide), y + (nrowDepartures)*sqSide, remainderDepartures*sqSide,sqSide);
+              }
             }
 
-             _ctx.globalAlpha = isHoveredStation ? 1 : 0.8;
-            drawarrivals()
-            drawdepartures()
+
+            // function drawarrivals() {
+
+            //   _ctx.fillStyle = "#73B1C9";
+
+            //   for (var i=0; i<arrivals; i++) {
+            //     var col=i%10;
+            //     var row=Math.floor(i/10);
+            //     _ctx.fillRect(x + col*spacing - (5 * spacing), y - row*spacing, 2, -2)
+            //   }
+            
+            // }
+
+            // function drawdepartures() {
+
+            //   _ctx.fillStyle = "#E5715A";
+
+            //   for (var i=0; i<departures; i++) {
+            //     var col=i%10;
+            //     var row=Math.floor(i/10);
+            //     _ctx.fillRect(x + col*spacing - (5 * spacing), y + row*spacing, 2, 2)
+            //   }
+            
+            // }
+
+            //  // _ctx.globalAlpha = isHoveredStation ? 1 : 0.8;
+            drawArrivals()
+            drawDepartures()
             drawblank(x,y,r)
 
           }
