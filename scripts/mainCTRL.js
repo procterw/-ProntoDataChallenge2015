@@ -37,27 +37,16 @@
     vm.monthOptions = DataFactory.monthOptions;
     vm.query = DataFactory.query;
 
-    vm.animateQuery = animateQuery;
+    // vm.animateQuery = animateQuery;
     // vm.animateTimespan = animateTimespan;
 
     vm.formatTime = formatTime;
 
-    vm.stop = stop;
-
-    var runningAnimation;
 
     // initialization function
 		DataFactory.loadData(initialize);
 
     window.onresize = resize;
-
-    // Is an animation currently running? 
-    var runningAnimation;
-
-    function stop() {
-      window.cancelAnimationFrame(runningAnimation);
-      runningAnimation = false;
-    }
 
     function initialize(trips, stations, weather, seattle) {
 
@@ -89,49 +78,71 @@
     var timeOfDay = "night";
     var newTimeOfDay = "night";
 
-    function animateQuery() {
 
-      MapFactory.Bikes.reset();
-      MapFactory.Bikes.resize();
-      MapFactory.Stations.reset();
 
-      // Data subset based on query object
-      var dataSubset = DataFactory.getTimeInMinutes(DataFactory.makeQuery());
 
-      angular.forEach(dataSubset, function(d) { d.finished=false; });
+    var Trends = new function() {
 
-      // Find the median time of this query for sunrise and sunset
-      var medianTime = dataSubset[Math.round(dataSubset.length/2)].starttime;
+      var animationFrame = false;
 
-      // Set color scales based on median time
-      var sunriset = DataFactory.getSunriseSunset(medianTime);
-
-      MapFactory.Map.setColorScales(sunriset);
-      MapFactory.Bikes.setColorScale(sunriset);
-      MapFactory.Stations.setColorScale(sunriset);
-
-      // Initialize active bikes
+      // Queried subset of trip data
+      var dataSubset = [];
+      // Array of newly active bikes since last frame
       var activeBikes = [];
+      // Sunrise and sunset times in minutes since 12AM
+      var sunriset;
 
-      // Set start and stop time in minutes and currentTime to 0
-      vm.timeStart = 0;
-      vm.timeStop = 24 * 60;
-      vm.currentTime = 0;
+      var pauseGap = 0;
+      var pauseStart;
 
-      // Starting time of animation
-      var animationStart = new Date();
-
-      runningAnimation = window.requestAnimationFrame(run);
-
-      // track the time of day
-      timeOfDay = "night";
-
+      // Select background of canva for water colors
       var water = d3.select(".canvas-wrapper");
+
+      this.initialize = initialize;
+      this.pause = pause;
+
+      function initialize() {
+
+        // Reset pause gap
+        pauseGap = 0;
+
+        // Reset everything
+        MapFactory.Bikes.reset();
+        MapFactory.Bikes.resize();
+        MapFactory.Stations.reset();
+
+        // Timing variables
+        animationStartTime = new Date();
+        timeOfDay = "night";
+
+        // Get data subset
+        dataSubset = DataFactory.getTimeInMinutes(DataFactory.makeQuery());
+        // Ensure the finished property is reset
+        angular.forEach(dataSubset, function(d) { d.finished=false; });
+
+        // Find the median time of this query for sunrise and sunset
+        var medianTime = dataSubset[Math.round(dataSubset.length/2)].starttime;
+        sunriset = DataFactory.getSunriseSunset(medianTime);
+
+        // Set the color scales for this run
+        MapFactory.Map.setColorScales(sunriset);
+        MapFactory.Bikes.setColorScale(sunriset);
+        MapFactory.Stations.setColorScale(sunriset);
+
+        // Set start and stop time in minutes and currentTime to 0
+        vm.timeStart = 0;
+        vm.timeStop = 24 * 60;
+        vm.currentTime = 0;
+
+        // Start animation
+        runningAnimation = window.requestAnimationFrame(run);
+
+      }
 
       function run() {
 
         // Update the current "real world" time
-        vm.currentTime = vm.minpersec * (((new Date()).getTime() - animationStart.getTime()) / 1000);
+        vm.currentTime = vm.minpersec * (((new Date()).getTime() - animationStartTime.getTime() - pauseGap) / 1000);
         if (vm.currentTime > vm.timeStop) vm.currentTime = vm.timeStop;
 
         $scope.$apply();
@@ -143,8 +154,8 @@
           newTimeOfDay = "day";
         }
 
-        if (newTimeOfDay !== timeOfDay && newTimeOfDay === "night") water.attr("class", "canvas-wrapper");
-        if (newTimeOfDay !== timeOfDay && newTimeOfDay === "day") water.attr("class", "canvas-wrapper day");
+        if (newTimeOfDay !== timeOfDay && newTimeOfDay === "night") water.attr("class", "canvas-wrapper sun-fast");
+        if (newTimeOfDay !== timeOfDay && newTimeOfDay === "day") water.attr("class", "canvas-wrapper day sun-fast");
         if (newTimeOfDay !== timeOfDay) timeOfDay = newTimeOfDay;
 
         // Remove day from the original subset
@@ -170,16 +181,127 @@
         MapFactory.Map.setTime(vm.currentTime);
         if (newFill) MapFactory.Map.render();
 
-        // Change background color
-        // vm.waterColor = MapFactory.Water.getColor(vm.currentTime % (24 * 60));
-
         if (vm.currentTime < vm.timeStop) runningAnimation = window.requestAnimationFrame(run);
 
       }
 
+      function pause() {
+
+        // unpause
+        if (!runningAnimation) {
+          pauseGap = pauseGap + (new Date() - pauseStart);
+          runningAnimation = window.requestAnimationFrame(run);
+          console.log(pauseGap)
+        } 
+        // pause
+        else {
+          window.cancelAnimationFrame(runningAnimation)
+          runningAnimation = false;
+          pauseStart = new Date();
+        }
+      }
+
+
+    };
+
+    vm.start = Trends.initialize;
+    vm.pause = Trends.pause;
+
+
+    // function animateQuery() {
+
+    //   MapFactory.Bikes.reset();
+    //   MapFactory.Bikes.resize();
+    //   MapFactory.Stations.reset();
+
+    //   // Data subset based on query object
+    //   var dataSubset = DataFactory.getTimeInMinutes(DataFactory.makeQuery());
+
+    //   angular.forEach(dataSubset, function(d) { d.finished=false; });
+
+    //   // Find the median time of this query for sunrise and sunset
+    //   var medianTime = dataSubset[Math.round(dataSubset.length/2)].starttime;
+
+    //   // Set color scales based on median time
+    //   var sunriset = DataFactory.getSunriseSunset(medianTime);
+
+    //   MapFactory.Map.setColorScales(sunriset);
+    //   MapFactory.Bikes.setColorScale(sunriset);
+    //   MapFactory.Stations.setColorScale(sunriset);
+
+    //   // Initialize active bikes
+    //   var activeBikes = [];
+
+    //   // Set start and stop time in minutes and currentTime to 0
+    //   vm.timeStart = 0;
+    //   vm.timeStop = 24 * 60;
+    //   vm.currentTime = 0;
+
+    //   // Starting time of animation
+    //   var animationStart = new Date();
+
+    //   runningAnimation = window.requestAnimationFrame(run);
+
+    //   // track the time of day
+    //   timeOfDay = "night";
+
       
 
-    }
+
+
+
+    //   function run() {
+
+    //     // Update the current "real world" time
+    //     vm.currentTime = vm.minpersec * (((new Date()).getTime() - animationStart.getTime()) / 1000);
+    //     if (vm.currentTime > vm.timeStop) vm.currentTime = vm.timeStop;
+
+    //     $scope.$apply();
+
+    //     // Get the new time of day
+    //     if (vm.currentTime < sunriset[1] - 60 || vm.currentTime > sunriset[0] - 60) {
+    //       newTimeOfDay = "night";
+    //     } else {
+    //       newTimeOfDay = "day";
+    //     }
+
+    //     if (newTimeOfDay !== timeOfDay && newTimeOfDay === "night") water.attr("class", "canvas-wrapper sun-fast");
+    //     if (newTimeOfDay !== timeOfDay && newTimeOfDay === "day") water.attr("class", "canvas-wrapper day sun-fast");
+    //     if (newTimeOfDay !== timeOfDay) timeOfDay = newTimeOfDay;
+
+    //     // Remove day from the original subset
+    //     activeBikes = DataFactory.findTripStations(DataFactory.getDataBefore(dataSubset, vm.currentTime, true));
+        
+    //     dataSubset = DataFactory.getDataAfter(dataSubset, vm.currentTime, true);
+
+    //     // Rerender bikes
+    //     MapFactory.Bikes.setUserFilter(vm.userType);
+    //     MapFactory.Bikes.setAgeFilter(vm.userAge);
+    //     MapFactory.Bikes.setTime(vm.currentTime);
+    //     MapFactory.Bikes.addData(activeBikes);
+    //     MapFactory.Bikes.render();
+
+    //     // Rerender stations
+    //     MapFactory.Stations.setUserFilter(vm.userType);
+    //     MapFactory.Stations.setAgeFilter(vm.userAge);
+    //     MapFactory.Stations.setTime(vm.currentTime);
+    //     MapFactory.Stations.render("usage");
+
+    //     // Rerender map
+    //     var newFill = MapFactory.Map.needsNewFill(vm.currentTime);
+    //     MapFactory.Map.setTime(vm.currentTime);
+    //     if (newFill) MapFactory.Map.render();
+
+    //     // Change background color
+    //     // vm.waterColor = MapFactory.Water.getColor(vm.currentTime % (24 * 60));
+
+    //     if (vm.currentTime < vm.timeStop) runningAnimation = window.requestAnimationFrame(run);
+
+    //   }
+
+      
+
+    // }
 
 
 
@@ -188,11 +310,11 @@
 
 
     $scope.$watch(function() { return [vm.userType, vm.userAge]; }, function() {
-      if (!runningAnimation) {
+      // if (!runningAnimation) {
         MapFactory.Stations.setUserFilter(vm.userType);
         MapFactory.Stations.setAgeFilter(vm.userAge);
         MapFactory.Stations.render();
-      }
+      // }
     }, true);
 
 

@@ -80,41 +80,44 @@
 			ng-options="option.val as option.name for option in main.monthOptions">
 		</select>
 
-		<button ng-click="main.animateQuery()">GO</button>
-		<button ng-click="main.stop()">STOP</button>
+		<button ng-click="main.start()">GO</button>
+		<button ng-click="main.pause()">STOP</button>
 
 		<br>
 
-		<button ng-click="main.animateTimespan()">GO</button>
-		<button ng-click="main.stop()">STOP</button>
+		<div class="filter-group">
 
-		<br>
+			<label>
+				<input type="radio" ng-model="main.userType" value="AO">
+				<span class="filter-label">All Users</span>
+			</label>
+		    <label>
+				<input type="radio" ng-model="main.userType" value="A">
+				<span class="filter-label">Annual</span>
+			</label>
+			<label>
+				<input type="radio" ng-model="main.userType" value="O">
+				<span class="filter-label">Short Term</span>
+			</label>
 
-		<label>
-			<input type="radio" ng-model="main.userType" value="AO">
-			All Users
-		</label>
-	    <label>
-			<input type="radio" ng-model="main.userType" value="A">
-			Annual
-		</label>
-		<label>
-			<input type="radio" ng-model="main.userType" value="O">
-			Short Term
-		</label>
+		</div>
 
-		<label>
-			<input type="radio" ng-model="main.userAge" value="all">
-			All Ages
-		</label>
-	    <label>
-			<input type="radio" ng-model="main.userAge" value="old">
-			Under 35
-		</label>
-		<label>
-			<input type="radio" ng-model="main.userAge" value="young">
-			Over 35
-		</label>
+		<div class="filter-group">
+
+			<label>
+				<input type="radio" ng-model="main.userAge" value="all">
+				<span class="filter-label">All Ages</span>
+			</label>
+		    <label>
+				<input type="radio" ng-model="main.userAge" value="old">
+				<span class="filter-label">Under 35</span>
+			</label>
+			<label>
+				<input type="radio" ng-model="main.userAge" value="young">
+				<span class="filter-label">Over 35</span>
+			</label>
+
+		</div>
 
 
 	</div>
