@@ -47,7 +47,7 @@
 
     function makeXYScales(width, height, retina) {
 
-      var mapCenterX = -122.3215;
+      var mapCenterX = -122.3425;
       var mapCenterY = 47.63;
 
       function scale(x, axis) {
@@ -200,8 +200,8 @@
 
       function setColorScales(sunriset) {
         // sunriset, night color, day color
-        _fillScale = makeSunScale(sunriset, "#3F3C3A", "#E0D7CE");
-        _strokeScale = makeSunScale(sunriset, "#454545", "#F7F7F7");
+        _fillScale = makeSunScale(sunriset, "#4C4440", "#E0D7CE");
+        _strokeScale = makeSunScale(sunriset, "#5B5552", "#F7F7F7");
       }
 
       function setTime(time) {
@@ -246,7 +246,7 @@
         // Clear context save it's state, then apply current
         // translation and zoom
         clear();
-        _ctx.save();
+        // _ctx.save();
         // _ctx.translate(transforms.translation[0], transforms.translation[1]);
         // _ctx.scale(transforms.zoom * _retina, transforms.zoom * _retina);
 
@@ -276,7 +276,7 @@
         _ctx.stroke();
 
         // Restore previous state
-        _ctx.restore();
+        // _ctx.restore();
 
       }
 
@@ -392,7 +392,7 @@
       function setColorScale(sunriset) {
         // sunriset, night color, day color
         _fillScale = makeSunScale(sunriset, "#666", "#FFF");
-        _strokeScale = makeSunScale(sunriset, "#3F3C3A", "#E2DCD5");
+        _strokeScale = makeSunScale(sunriset, "#4C4440", "#E2DCD5");
       }
 
       function setTime(time) {
@@ -486,7 +486,7 @@
         _plotType = plotType || _plotType;
 
         clear();
-        _ctx.save();
+        // _ctx.save();
         // _ctx.translate(transforms.translation[0], transforms.translation[1]);
         // _ctx.scale(transforms.zoom * _retina, transforms.zoom * _retina);
 
@@ -501,7 +501,7 @@
 
           // hovered behavior
           var isHoveredStation = _hoveredStation === i;
-          var addedSize = isHoveredStation ? 2 : 0;
+          var addedSize = isHoveredStation ? 1 : 0;
 
           var station = _stations[i];
 
@@ -545,7 +545,7 @@
             // var spacing = isHoveredStation ? 3 : 2;
 
             var rowLength = 12;
-            var sqSide = 2; // square side in pixels
+            var sqSide = 2 + (addedSize / 2); // square side in pixels
 
             // Number of rows
             var nrowArrivals = Math.floor(arrivals / rowLength);
@@ -575,32 +575,6 @@
               }
             }
 
-
-            // function drawarrivals() {
-
-            //   _ctx.fillStyle = "#73B1C9";
-
-            //   for (var i=0; i<arrivals; i++) {
-            //     var col=i%10;
-            //     var row=Math.floor(i/10);
-            //     _ctx.fillRect(x + col*spacing - (5 * spacing), y - row*spacing, 2, -2)
-            //   }
-            
-            // }
-
-            // function drawdepartures() {
-
-            //   _ctx.fillStyle = "#E5715A";
-
-            //   for (var i=0; i<departures; i++) {
-            //     var col=i%10;
-            //     var row=Math.floor(i/10);
-            //     _ctx.fillRect(x + col*spacing - (5 * spacing), y + row*spacing, 2, 2)
-            //   }
-            
-            // }
-
-            //  // _ctx.globalAlpha = isHoveredStation ? 1 : 0.8;
             drawArrivals()
             drawDepartures()
             drawblank(x,y,r)
@@ -751,14 +725,14 @@
       function render() {
 
         clear();
-        _ctx.save();
+        // _ctx.save();
         // _ctx.translate(transforms.translation[0], transforms.translation[1]);
         // _ctx.scale(transforms.zoom * _retina, transforms.zoom * _retina);
 
         _ctx.strokeStyle = _strokeScale(_currentTime);
         _ctx.lineWidth = 2;
 
-        _ctx.save();
+        // _ctx.save();
 
         // Draw the fading lines
         angular.forEach(_positionData.filter(function(bike) {
@@ -781,7 +755,7 @@
           
         });
 
-        _ctx.restore();
+        // _ctx.restore();
 
         // Active bikes always have opacity 0.15
         _ctx.globalAlpha = 0.15;
@@ -818,7 +792,7 @@
         });
         
 
-        _ctx.restore();
+        // _ctx.restore();
 
       }
 

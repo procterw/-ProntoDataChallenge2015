@@ -29,7 +29,7 @@ angular.module('App')
         var retina = devicePixelRatio / backingStoreRatio;
 
         var width = 250,
-        height = 60;
+        height = 50;
 
         canvas.attr("width", width * retina);
         canvas.attr("height", height * retina);
@@ -56,7 +56,7 @@ angular.module('App')
 
           var xScale = d3.scale.linear()
             .domain([0,24 * 60])
-            .range([3,width-3]);
+            .range([0,width]);
 
           var departureTimes = station.departures.filter(function(d) {
             var user = userFilter === "AO" || d.usertype === userFilter;
@@ -80,18 +80,20 @@ angular.module('App')
           var arrivalsHist = d3.layout.histogram()
             .bins(xScale.ticks(12*24))(arrivalTimes);
 
-          ctx.fillStyle = "rgba(0,0,0,0.5)"
+          ctx.fillStyle = "rgba(255,255,255,0.2)";
+          ctx.fillRect(0,0,width,height);
+          ctx.fillStyle = "rgba(255,255,255,0.7)";
           ctx.fillRect(0,0,xScale($scope.main.currentTime),height);
 
-          ctx.beginPath();
-          ctx.moveTo(1,0);
-          ctx.lineTo(1,height);
-          ctx.moveTo(1, height/2);
-          ctx.lineTo(width, height/2);
-          ctx.moveTo(width-1,0);
-          ctx.lineTo(width-1,height);
-          ctx.strokeStyle = "white";
-          ctx.stroke();
+          // ctx.beginPath();
+          // ctx.moveTo(1,0);
+          // ctx.lineTo(1,height);
+          // ctx.moveTo(1, height/2);
+          // ctx.lineTo(width, height/2);
+          // ctx.moveTo(width-1,0);
+          // ctx.lineTo(width-1,height);
+          // ctx.strokeStyle = "white";
+          // ctx.stroke();
 
           ctx.fillStyle = "white"
           // var times = ["4","7","10","1","4","7","10","1","4"];
@@ -104,13 +106,13 @@ angular.module('App')
           angular.forEach(departuresHist, function(t) {
               ctx.beginPath();
               ctx.fillStyle = "#DB6E63";
-              ctx.fillRect(xScale(t.x),32,2,t.y*4);
+              ctx.fillRect(xScale(t.x),26,2,t.y*4);
           })
 
           angular.forEach(arrivalsHist, function(t) {
               ctx.beginPath();
               ctx.fillStyle = "#73B1C9";
-              ctx.fillRect(xScale(t.x),28,2,-t.y*4);
+              ctx.fillRect(xScale(t.x),24,2,-t.y*4);
           })
 
 

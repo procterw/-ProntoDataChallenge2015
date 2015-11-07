@@ -18,8 +18,6 @@
 
 		var vm = this;
 
-    var framerate = 40;
-
     // Default options
 		vm.timeStart = new Date(2014, 10, 16);
     vm.timeStop = new Date(2014, 10, 18);
@@ -113,6 +111,7 @@
 
         // Timing variables
         animationStartTime = new Date();
+        animationLastTime = new Date();
         timeOfDay = "night";
 
         // Get data subset
@@ -142,7 +141,11 @@
       function run() {
 
         // Update the current "real world" time
-        vm.currentTime = vm.minpersec * (((new Date()).getTime() - animationStartTime.getTime() - pauseGap) / 1000);
+        vm.currentTime = vm.currentTime + vm.minpersec * (((new Date()).getTime() - animationLastTime - pauseGap) / 1000);
+
+        // This lets us keep track of when the previous iteration of run was
+        animationLastTime = new Date();
+
         if (vm.currentTime > vm.timeStop) vm.currentTime = vm.timeStop;
 
         $scope.$apply();
