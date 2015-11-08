@@ -20,12 +20,17 @@
     Factory.Map = new Map("#mapCanvas");
     Factory.Stations = new Stations("#stationCanvas");
     Factory.Bikes = new Bikes("#bikeCanvas");
+    Factory.Timeseries = new Timeseries("#timeseriesCanvas");
 
 
     var transforms = {
       zoom: 1,
       translation: [0, 0]
     };
+
+    var red = "#D37363";
+    var blue = "#88B5BF";
+    var purple = "#A493A5";
 
 
     return Factory;
@@ -200,7 +205,7 @@
 
       function setColorScales(sunriset) {
         // sunriset, night color, day color
-        _fillScale = makeSunScale(sunriset, "#4C4440", "#E0D7CE");
+        _fillScale = makeSunScale(sunriset, "#544A45", "#E0D7CE");
         _strokeScale = makeSunScale(sunriset, "#5B5552", "#F7F7F7");
       }
 
@@ -324,6 +329,8 @@
       Stations.reset = reset;
       Stations.getScales = getScales;
 
+      Stations.getData = getData;
+
       Stations.setUserFilter = setUserFilter;
       Stations.setAgeFilter = setAgeFilter;
 
@@ -340,6 +347,10 @@
 
       function getHoveredStation() {
         return _stations[_hoveredStation];
+      }
+
+      function getData() {
+        return _stations;
       }
 
       function mousemove(d,i) {
@@ -391,7 +402,7 @@
 
       function setColorScale(sunriset) {
         // sunriset, night color, day color
-        _fillScale = makeSunScale(sunriset, "#666", "#FFF");
+        _fillScale = makeSunScale(sunriset, "#777", "#FFF");
         _strokeScale = makeSunScale(sunriset, "#4C4440", "#E2DCD5");
       }
 
@@ -554,7 +565,7 @@
             var remainderDepartures = departures % rowLength;
 
             function drawArrivals() {
-              _ctx.fillStyle = "#73B1C9";
+              _ctx.fillStyle = blue;
               // draw big row
               if (nrowArrivals > 0) {
                 _ctx.fillRect(x - (rowLength/2*sqSide), y, rowLength*sqSide, -(nrowArrivals)*sqSide);
@@ -565,7 +576,7 @@
             }
 
             function drawDepartures() {
-              _ctx.fillStyle = "#E5715A";
+              _ctx.fillStyle = red;
               // draw big row
               if (nrowDepartures > 0) {
                 _ctx.fillRect(x - (rowLength/2*sqSide), y, rowLength*sqSide, (nrowDepartures)*sqSide);
@@ -800,6 +811,233 @@
 
 
 
+
+
+
+
+
+
+
+
+    function Timeseries(id) {
+
+      var Timeseries = {};
+
+      var _canvas = d3.select(id);
+
+      // Internal coordinates data
+      var _xScale; // coordinates -> xy
+      var _yScale; // coordinates -> xy
+      var _currentTime = 0; // current time in minutes
+      var _ctx = _canvas.node().getContext('2d');
+      var _retina = findRetina(_ctx); // 1 for non retina, 1+ for retina
+      
+      var _userFilter = "AO";
+      var _ageFilter = "all";
+
+      var _width, _height;
+
+      Timeseries.setColorScale = setColorScale;
+      Timeseries.setTime = setTime;
+      Timeseries.resize = resize;
+      // Timeseries.reset = reset;
+
+      Timeseries.setUserFilter = setUserFilter;
+      Timeseries.setAgeFilter = setAgeFilter;
+
+      Timeseries.render = render;
+
+      return Timeseries;
+
+      function getData() {
+
+      }
+
+      function setUserFilter(filter) {
+        _userFilter = filter;
+      }
+
+      function setAgeFilter(filter) {
+        _ageFilter = filter;
+      }
+
+      function setColorScale(sunriset) {
+        // sunriset, night color, day color
+        _strokeScale = makeSunScale(sunriset, "#F2EABD", "#4B756D");
+      }
+
+      function setTime(time) {
+        _currentTime = time;
+      }
+      
+      function resize() {
+
+        // find new bounding box
+        var bbox = _canvas.node().parentNode.getBoundingClientRect();
+
+        _width = 140 * _retina;
+        _height = bbox.height * _retina;
+        _plotWidth = 60;
+
+        // Resize canvases
+        _canvas.attr("width", _width);
+        _canvas.attr("height", _height);
+
+        _canvas.style("width", _width / _retina + "px");
+        _canvas.style("height", _height / _retina + "px");
+        // _canvas.style("padding-left", 320 + "px");
+
+        _ctx.scale(_retina,_retina)
+
+        _xScale = d3.scale.linear().domain([0,24*60]).range([10,(_height)/_retina - 30]);
+        _yScale = d3.scale.linear().domain([0,200]).range([0,20]);
+
+      }
+
+      function render(selection) {
+
+        // Current stations dataset
+        var data = Factory.Stations.getData();
+
+        // if (selection === "all") {
+
+        // All of the departures
+        var departures = data.map(function(station) {
+          return station.departures;
+        }).reduce(function(prev, cur) {
+          return prev.concat(cur);
+        });
+
+        // All of the arrivals
+        var arrivals = data.map(function(station) {
+          return station.arrivals;
+        }).reduce(function(prev, cur) {
+          return prev.concat(cur);
+        });
+
+        // 
+        var departureTimes = departures.filter(function(d) {
+          var user = _userFilter === "AO" || d.usertype === _userFilter;
+          var age = _ageFilter === "all" || d.age === _ageFilter;
+          return user && age;
+        }).map(function(s) {
+          return Math.floor(s.time/5) * 5;
+        });
+
+        var arrivalTimes = arrivals.filter(function(d) {
+          var user = _userFilter === "AO" || d.usertype === _userFilter;
+          var age = _ageFilter === "all" || d.age === _ageFilter;
+          return user && age;
+        }).map(function(s) {
+          return Math.floor(s.time/5) * 5;
+        });
+
+        var departuresHist = d3.layout.histogram()
+          .bins(_xScale.ticks(5*24))(departureTimes);
+
+        var arrivalsHist = d3.layout.histogram()
+          .bins(_xScale.ticks(5*24))(arrivalTimes);
+
+        _ctx.clearRect(0,0,_width,_height);
+
+        var d1;
+        var d2;
+        var diff;
+
+        // JUST red bars
+        _ctx.fillStyle = red;
+        for(var i=0; i<Math.floor(_currentTime/5); i++){
+          d1 = departuresHist[i];
+          d2 = arrivalsHist[i];
+          if (d1 && d1.y > d2.y) _ctx.fillRect(d1.y,_xScale(d1.x),d2.y-d1.y,4);
+        }
+
+        _ctx.fillStyle = blue;
+        for(var i=0; i<Math.floor(_currentTime/5) * 5; i++){
+          d2 = departuresHist[i];
+          d1 = arrivalsHist[i];
+          if (d1 && d1.y > d2.y) _ctx.fillRect(d1.y,_xScale(d1.x),d2.y-d1.y,4);
+        }
+
+        _ctx.fillStyle = purple;
+        for(var i=0; i<Math.floor(_currentTime/5) * 5; i++){
+          d2 = departuresHist[i];
+          d1 = arrivalsHist[i];
+          if (d1) _ctx.fillRect(0,_xScale(d1.x),Math.min(d1.y,d2.y),4);
+        }
+
+        _ctx.fillStyle = "white";
+        // _ctx.font = "18px Work Sans";
+        
+       
+
+        _ctx.font = "10px Work Sans";
+        for (var i=0;i<13;i++) {
+          var time = formatTime(i*60*2).split(",")[0];
+          _ctx.fillText(time,0,_xScale(i*60*2));
+        }
+
+        var time = formatTime(_currentTime).split(",");
+        _ctx.fillText(time[0],50,_xScale(_currentTime));
+        _ctx.fillText(time[1],80,_xScale(_currentTime));
+
+
+        
+        
+
+        // for (var i=0; i<data.length; i++) {
+
+        //   var station = data[i];
+
+        //   var departureTimes = station.departures.filter(function(d) {
+        //     var user = _userFilter === "AO" || _d.usertype === _userFilter;
+        //     var age = _ageFilter === "all" || _d.age === _ageFilter;
+        //     return user && age;
+        //   }).map(function(s) {
+        //     return Math.floor(s.time/5) * 5;
+        //   });
+
+        //   var arrivalTimes = station.arrivals.filter(function(d) {
+        //     var user = _userFilter === "AO" || _d.usertype === userFilter;
+        //     var age = _ageFilter === "all" || _d.age === ageFilter;
+        //     return user && age;
+        //   }).map(function(s) {
+        //     return Math.floor(s.time/5) * 5;
+        //   });
+
+        //   var departuresHist = d3.layout.histogram()
+        //     .bins(_xScale.ticks(12*24))(departureTimes);
+
+        //   var arrivalsHist = d3.layout.histogram()
+        //     .bins(_xScale.ticks(12*24))(arrivalTimes);
+
+        // }
+
+      }
+
+    }
+
+
+
   }
 
+  function formatTime(time) {
+
+          if (!time) return "04:00,AM";
+
+          var hours = (Math.floor(time / 60) + 4);
+          var minutes = Math.round(time % 60);
+
+          var ampm = hours < 12 || hours > 23 ? "AM" : "PM";
+          hours = hours % 12;
+          if (hours === 0) hours = 12;
+
+          if (hours < 10) hours = "0" + hours;
+          if (minutes < 10) minutes = "0" + minutes;
+          return hours + ":" + minutes + "," + ampm;
+
+        }
+
+
 })();
+

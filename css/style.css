@@ -74,8 +74,15 @@ h2, h3 {
 	width: 300px;
 	color: white;
 	z-index: 500;
-	background-color: rgba(255,255,255,0.8);
-	box-shadow: 0 0 5px 1px rgba(0,0,0,0.1);
+	background-color: rgba(0,0,0,0.1);
+	/*box-shadow: 0 0 5px 1px rgba(0,0,0,0.1);*/
+}
+
+.sidebar h2 {
+	text-transform: uppercase;
+	font-weight: 700;
+	font-size: 18px;
+	padding: 5px;
 }
 
 /*filtering */
@@ -88,13 +95,14 @@ h2, h3 {
 	/*text-transform: uppercase;*/
 	box-sizing: border-box;
 	background-color: rgba(255,255,255,0.1);
-	padding: 10px 0;
+	padding: 8px;
 	text-align: center;
 	font-size: 13px;
-	width: 33.3%;
+	width: 32%;
 	display: block;
 	float: left;
-	margin-bottom: 10px;
+	margin: 2px;
+	border-radius: 3px;
 }
 
 .filter-label:hover {
@@ -107,14 +115,14 @@ input[type=radio] {
 
 input[type="radio"]:checked + span{ 
 	font-weight: bold; 
-	background-color: rgba(255,255,255,0.7);
-	color: #333;
+	background-color: rgba(255,255,255,0.3);
+	/*color: #333;*/
 } 
 
 
 input[type="radio"]:checked + span:hover { 
 	font-weight: bold; 
-	background-color: rgba(255,255,255,0.9);
+	background-color: rgba(255,255,255,0.4);
 } 
 
 /**/
@@ -133,7 +141,7 @@ input[type="radio"]:checked + span:hover {
 }
 
 .canvas-wrapper {
-	background-color: #445A66;
+	background-color: #585F60;
 	height: 100%;
 	margin: 0;
 	position: relative;
@@ -148,7 +156,7 @@ input[type="radio"]:checked + span:hover {
 }
 
 .canvas-wrapper.day {
-	background-color: #C6DBD6;
+	background-color: #CCD6D3;
 }
 
 
@@ -191,7 +199,7 @@ input[type="radio"]:checked + span:hover {
 .cover-block {
 	width: 250px;
 	box-sizing: border-box;
-	margin: 10px 0 0 12px;
+	margin: 10px 0 0 50px;
 	/*padding: 7px;*/
 	color: white;
 	/*background-color: rgba(0,0,0,0.1);*/

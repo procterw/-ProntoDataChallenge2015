@@ -23,7 +23,7 @@
     vm.timeStop = new Date(2014, 10, 18);
     vm.timeRange = [new Date(2014, 10, 16), new Date(2014, 10, 18)];
     vm.currentTime = 0;
-    vm.minpersec = 45;
+    vm.minpersec = 20;
 
     vm.hoveredStation = MapFactory.Stations.getHoveredStation;
 
@@ -35,10 +35,15 @@
     vm.monthOptions = DataFactory.monthOptions;
     vm.query = DataFactory.query;
 
+    vm.previous = {
+      day: "",
+      month: "" 
+    }
+
     // vm.animateQuery = animateQuery;
     // vm.animateTimespan = animateTimespan;
 
-    vm.formatTime = formatTime;
+    // vm.formatTime = formatTime;
 
 
     // initialization function
@@ -70,6 +75,8 @@
       MapFactory.Stations.render();
       MapFactory.Bikes.resize();
       MapFactory.Bikes.render();
+      MapFactory.Timeseries.resize();
+      MapFactory.Timeseries.render();
     };
 
     // track the time of day
@@ -178,6 +185,9 @@
         MapFactory.Stations.setAgeFilter(vm.userAge);
         MapFactory.Stations.setTime(vm.currentTime);
         MapFactory.Stations.render("usage");
+
+        MapFactory.Timeseries.setTime(vm.currentTime);
+        MapFactory.Timeseries.render();
 
         // Rerender map
         var newFill = MapFactory.Map.needsNewFill(vm.currentTime);
@@ -316,7 +326,10 @@
       // if (!runningAnimation) {
         MapFactory.Stations.setUserFilter(vm.userType);
         MapFactory.Stations.setAgeFilter(vm.userAge);
+        MapFactory.Timeseries.setUserFilter(vm.userType);
+        MapFactory.Timeseries.setAgeFilter(vm.userAge);
         MapFactory.Stations.render();
+        MapFactory.Timeseries.render();
       // }
     }, true);
 
@@ -468,20 +481,20 @@
 
 
 
-    // Formates a "minute" time into hours and minutes
-    function formatTime(time) {
+    // // Formates a "minute" time into hours and minutes
+    // function formatTime(time) {
 
-      var hours = (Math.floor(time / 60) + 4);
-      var minutes = Math.round(time % 60);
+    //   var hours = (Math.floor(time / 60) + 4);
+    //   var minutes = Math.round(time % 60);
 
-      var ampm = hours < 12 || hours > 23 ? "AM" : "PM";
-      hours = hours % 12;
-      if (hours === 0) hours = 12;
+    //   var ampm = hours < 12 || hours > 23 ? "AM" : "PM";
+    //   hours = hours % 12;
+    //   if (hours === 0) hours = 12;
 
-      if (hours < 10) hours = "0" + hours;
-      if (minutes < 10) minutes = "0" + minutes;
-      return hours + ":" + minutes + " " + ampm;
-    }
+    //   if (hours < 10) hours = "0" + hours;
+    //   if (minutes < 10) minutes = "0" + minutes;
+    //   return hours + ":" + minutes + " " + ampm;
+    // }
 
   }
 
