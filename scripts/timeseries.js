@@ -56,7 +56,7 @@ angular.module('App')
 
           var xScale = d3.scale.linear()
             .domain([0,24 * 60])
-            .range([0,width]);
+            .range([3,width-3]);
 
           var departureTimes = station.departures.filter(function(d) {
             var user = userFilter === "AO" || d.usertype === userFilter;

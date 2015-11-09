@@ -369,6 +369,7 @@
         if (_hoveredStation !== previousStation) {
           $rootScope.$apply();
           render();
+          Factory.Timeseries.render(_stations[_hoveredStation]);
         }
       }
 
@@ -896,26 +897,34 @@
 
       function render(selection) {
 
-        // Current stations dataset
-        var data = Factory.Stations.getData();
+        var scalar = selection ? 12 : 1;
 
-        // if (selection === "all") {
+        if (selection === "all" || !selection) {
 
-        // All of the departures
-        var departures = data.map(function(station) {
-          return station.departures;
-        }).reduce(function(prev, cur) {
-          return prev.concat(cur);
-        });
+          // Current stations dataset
+          var data = Factory.Stations.getData();
 
-        // All of the arrivals
-        var arrivals = data.map(function(station) {
-          return station.arrivals;
-        }).reduce(function(prev, cur) {
-          return prev.concat(cur);
-        });
+          // All of the departures
+          var departures = data.map(function(station) {
+            return station.departures;
+          }).reduce(function(prev, cur) {
+            return prev.concat(cur);
+          });
 
-        // 
+          // All of the arrivals
+          var arrivals = data.map(function(station) {
+            return station.arrivals;
+          }).reduce(function(prev, cur) {
+            return prev.concat(cur);
+          });
+
+        } else {
+
+          var departures = selection.departures;
+          var arrivals = selection.arrivals
+
+        }
+
         var departureTimes = departures.filter(function(d) {
           var user = _userFilter === "AO" || d.usertype === _userFilter;
           var age = _ageFilter === "all" || d.age === _ageFilter;
@@ -946,31 +955,29 @@
 
         // JUST red bars
         _ctx.fillStyle = red;
-        for(var i=0; i<Math.floor(_currentTime/5); i++){
+        for (var i=0; i<Math.floor(_currentTime/5); i++){
           d1 = departuresHist[i];
           d2 = arrivalsHist[i];
-          if (d1 && d1.y > d2.y) _ctx.fillRect(d1.y,_xScale(d1.x),d2.y-d1.y,4);
+          if (d1 && d1.y > d2.y) _ctx.fillRect(d1.y,_xScale(d1.x),(d2.y-d1.y)*scalar,4);
         }
 
         _ctx.fillStyle = blue;
-        for(var i=0; i<Math.floor(_currentTime/5) * 5; i++){
+        for (var i=0; i<Math.floor(_currentTime/5) * 5; i++){
           d2 = departuresHist[i];
           d1 = arrivalsHist[i];
-          if (d1 && d1.y > d2.y) _ctx.fillRect(d1.y,_xScale(d1.x),d2.y-d1.y,4);
+          if (d1 && d1.y > d2.y) _ctx.fillRect(d1.y,_xScale(d1.x),(d2.y-d1.y)*scalar,4);
         }
 
         _ctx.fillStyle = purple;
-        for(var i=0; i<Math.floor(_currentTime/5) * 5; i++){
+        for (var i=0; i<Math.floor(_currentTime/5) * 5; i++){
           d2 = departuresHist[i];
           d1 = arrivalsHist[i];
-          if (d1) _ctx.fillRect(0,_xScale(d1.x),Math.min(d1.y,d2.y),4);
+          if (d1) _ctx.fillRect(0,_xScale(d1.x),Math.min(d1.y,d2.y)*scalar,4);
         }
 
         _ctx.fillStyle = "white";
         // _ctx.font = "18px Work Sans";
         
-       
-
         _ctx.font = "10px Work Sans";
         for (var i=0;i<13;i++) {
           var time = formatTime(i*60*2).split(",")[0];
@@ -981,8 +988,6 @@
         _ctx.fillText(time[0],50,_xScale(_currentTime));
         _ctx.fillText(time[1],80,_xScale(_currentTime));
 
-
-        
         
 
         // for (var i=0; i<data.length; i++) {
