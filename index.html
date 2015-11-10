@@ -29,6 +29,15 @@
 	<!-- <h2>{{main.time.toDateString()}}</h2>
 	<h3>{{main.time.getHours()}}:{{main.time.getMinutes()}}</h3> -->
 
+	<div class="loading" ng-class="{hidden: !main.loading}">
+		<div class="content">
+			<div class="inner-circles-loader">
+			  Loading…
+			</div>
+			<h2>Loading trip data...</h2>
+		</div>
+	</div>
+
 	<div class="canvas-wrapper night">
 	<!-- <div class="canvas-wrapper"> -->
 
@@ -69,84 +78,96 @@
 	<div class="sidebar">
 
 
-<!-- 		<button ng-click="main.minpersec=5">></button>
-		<button ng-click="main.minpersec=15">>></button>
-		<button ng-click="main.minpersec=30">>>></button>
- -->
 
-		<button ng-click="main.start()">
-			start
-			<!-- <svg><polygon points="5.4000 , 2.9752 14.2868 , 8.9254  5.4000 ,14.8754"/></svg> -->
-		</button>
-		<button ng-click="main.pause()">
-			stop
-			<!-- <svg>
-				<rect x="3" y="4" width="4" height="12"/>
-				<rect x="10" y="4" width="4" height="12"/>
-			</svg> -->
-		</button>
+ 		<div class="row">
 
-		<h2>Query</h3>
+			<button ng-click="main.start()" ng-hide="vm.animationRunning()">
+				<img src="images/play.svg" />
+			</button>
 
-		<select 
-			ng-model="main.query.subset"
-			ng-options="option.val as option.name for option in main.subsetOptions">
-		</select>
+			<button ng-click="main.pause()" ng-hide="vm.animationRunning()">
+				<img src="images/pause.svg" />
+			</button>
 
-		<select 
-			ng-model="main.query.month"
-			ng-options="option.val as option.name for option in main.monthOptions">
-		</select>
+			<button ng-click="main.pause()" ng-hide="">
+				<img src="images/replay.svg" />
+			</button>
 
-		<h2>Playback Speed</h2>
+		</div>
 
-		<label>
-			<input type="radio" ng-model="main.minpersec" value="10">
-			<span class="filter-label">></span>
-		</label>
-	    <label>
-			<input type="radio" ng-model="main.minpersec" value="20">
-			<span class="filter-label">>></span>
-		</label>
-		<label>
-			<input type="radio" ng-model="main.minpersec" value="45">
-			<span class="filter-label">>>></span>
-		</label>
+		<div class="row">
 
+			<h2>Query</h2>
 
-		<h2>Filters</h2>
+			<select 
+				ng-model="main.query.subset"
+				ng-options="option.val as option.name for option in main.subsetOptions">
+			</select>
 
-		<div class="filter-group">
+			<select 
+				ng-model="main.query.month"
+				ng-options="option.val as option.name for option in main.monthOptions">
+			</select>
+
+		</div>
+
+		<div class="row">
+
+			<h2>Playback Speed</h2>
 
 			<label>
-				<input type="radio" ng-model="main.userType" value="AO">
-				<span class="filter-label">All Users</span>
+				<input type="radio" ng-model="main.minpersec" value="10">
+				<span class="filter-label">></span>
 			</label>
 		    <label>
-				<input type="radio" ng-model="main.userType" value="A">
-				<span class="filter-label">Annual</span>
+				<input type="radio" ng-model="main.minpersec" value="20">
+				<span class="filter-label">>></span>
 			</label>
 			<label>
-				<input type="radio" ng-model="main.userType" value="O">
-				<span class="filter-label">Short Term</span>
+				<input type="radio" ng-model="main.minpersec" value="45">
+				<span class="filter-label">>>></span>
 			</label>
 
 		</div>
 
-		<div class="filter-group">
 
-			<label>
-				<input type="radio" ng-model="main.userAge" value="all">
-				<span class="filter-label">All Ages</span>
-			</label>
-		    <label>
-				<input type="radio" ng-model="main.userAge" value="old">
-				<span class="filter-label">Under 35</span>
-			</label>
-			<label>
-				<input type="radio" ng-model="main.userAge" value="young">
-				<span class="filter-label">Over 35</span>
-			</label>
+		<div class="row">
+
+			<h2>Filters</h2>
+
+			<div class="filter-group">
+
+				<label>
+					<input type="radio" ng-model="main.userType" value="AO">
+					<span class="filter-label">All Users</span>
+				</label>
+			    <label>
+					<input type="radio" ng-model="main.userType" value="A">
+					<span class="filter-label">Annual</span>
+				</label>
+				<label>
+					<input type="radio" ng-model="main.userType" value="O">
+					<span class="filter-label">Short Term</span>
+				</label>
+
+			</div>
+
+			<div class="filter-group">
+
+				<label>
+					<input type="radio" ng-model="main.userAge" value="all">
+					<span class="filter-label">All Ages</span>
+				</label>
+			    <label>
+					<input type="radio" ng-model="main.userAge" value="old">
+					<span class="filter-label">Under 35</span>
+				</label>
+				<label>
+					<input type="radio" ng-model="main.userAge" value="young">
+					<span class="filter-label">Over 35</span>
+				</label>
+
+			</div>
 
 		</div>
 

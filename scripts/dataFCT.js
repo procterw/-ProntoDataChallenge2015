@@ -69,6 +69,8 @@
       subset: 5
     };
 
+    var loading;
+
     // four hour timeshift to apply to all dates
     var timeShift = 1000 * 60 * 60 * 4;
 

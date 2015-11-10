@@ -25,6 +25,8 @@
     vm.currentTime = 0;
     vm.minpersec = 20;
 
+    vm.loading = true;
+
     vm.hoveredStation = MapFactory.Stations.getHoveredStation;
 
     vm.userType = "AO";
@@ -63,6 +65,11 @@
       
       resize();
 
+      setTimeout(function() {
+        vm.loading = false
+        $scope.$apply()
+      }, 100);
+
     };
 
     // Resize and rerender canvas layers.
@@ -96,6 +103,7 @@
       var activeBikes = [];
       // Sunrise and sunset times in minutes since 12AM
       var sunriset;
+      var sunclass;
 
       var pauseGap = 0;
       var pauseStart;
@@ -105,6 +113,7 @@
 
       this.initialize = initialize;
       this.pause = pause;
+      this.isRunning = isRunning;
 
       function initialize() {
 
@@ -164,8 +173,10 @@
           newTimeOfDay = "day";
         }
 
-        if (newTimeOfDay !== timeOfDay && newTimeOfDay === "night") water.attr("class", "canvas-wrapper sun-fast");
-        if (newTimeOfDay !== timeOfDay && newTimeOfDay === "day") water.attr("class", "canvas-wrapper day sun-fast");
+        sunclass = vm.minpersec === 10 ? "sun-fast" : (vm.minpersec === 20 ? "sun-med" : "sun-slow");
+
+        if (newTimeOfDay !== timeOfDay && newTimeOfDay === "night") water.attr("class", "canvas-wrapper " + sunclass);
+        if (newTimeOfDay !== timeOfDay && newTimeOfDay === "day") water.attr("class", "canvas-wrapper day " + sunclass);
         if (newTimeOfDay !== timeOfDay) timeOfDay = newTimeOfDay;
 
         // Remove day from the original subset
@@ -218,12 +229,17 @@
       }
 
 
+      function isRunning() {
+        return !!runningAnimation;
+      }
+
+
     };
 
     vm.start = Trends.initialize;
     vm.pause = Trends.pause;
 
-
+    vm.animationRunning = Trends.isRunning;
 
 
     $scope.$watch(function() { return [vm.userType, vm.userAge]; }, function() {

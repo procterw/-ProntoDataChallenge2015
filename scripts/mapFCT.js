@@ -22,7 +22,6 @@
     Factory.Bikes = new Bikes("#bikeCanvas");
     Factory.Timeseries = new Timeseries("#timeseriesCanvas");
 
-
     var transforms = {
       zoom: 1,
       translation: [0, 0]
@@ -73,7 +72,8 @@
 
       // Round values to the nearest 1/2
       xScale.round = function(x) {
-        return Math.round(this(x) * 2) / 2;
+        if (retina < 2) return x;
+        return Math.round(this(x) * retina) / retina;
       }
 
       var yScale = d3.scale.linear()
@@ -85,7 +85,8 @@
 
       // Round values to the nearest 1/2
       yScale.round = function(y) {
-        return Math.round(this(y) * 2) / 2;
+        if (retina < 2) return x;
+        return Math.round(this(y) * retina) / retina;
       }
 
       return {
@@ -981,42 +982,14 @@
         _ctx.font = "10px Work Sans";
         for (var i=0;i<13;i++) {
           var time = formatTime(i*60*2).split(",")[0];
-          _ctx.fillText(time,0,_xScale(i*60*2));
+          _ctx.fillText(time,5,_xScale(i*60*2));
         }
 
+        _ctx.font = "14px Work Sans";
         var time = formatTime(_currentTime).split(",");
-        _ctx.fillText(time[0],50,_xScale(_currentTime));
-        _ctx.fillText(time[1],80,_xScale(_currentTime));
+        _ctx.fillText(time[0],50,_xScale(_currentTime)+3);
+        _ctx.fillText(time[1],90,_xScale(_currentTime)+3);
 
-        
-
-        // for (var i=0; i<data.length; i++) {
-
-        //   var station = data[i];
-
-        //   var departureTimes = station.departures.filter(function(d) {
-        //     var user = _userFilter === "AO" || _d.usertype === _userFilter;
-        //     var age = _ageFilter === "all" || _d.age === _ageFilter;
-        //     return user && age;
-        //   }).map(function(s) {
-        //     return Math.floor(s.time/5) * 5;
-        //   });
-
-        //   var arrivalTimes = station.arrivals.filter(function(d) {
-        //     var user = _userFilter === "AO" || _d.usertype === userFilter;
-        //     var age = _ageFilter === "all" || _d.age === ageFilter;
-        //     return user && age;
-        //   }).map(function(s) {
-        //     return Math.floor(s.time/5) * 5;
-        //   });
-
-        //   var departuresHist = d3.layout.histogram()
-        //     .bins(_xScale.ticks(12*24))(departureTimes);
-
-        //   var arrivalsHist = d3.layout.histogram()
-        //     .bins(_xScale.ticks(12*24))(arrivalTimes);
-
-        // }
 
       }
 

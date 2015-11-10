@@ -78,6 +78,12 @@ h2, h3 {
 	/*box-shadow: 0 0 5px 1px rgba(0,0,0,0.1);*/
 }
 
+.row {
+	width: 100%;
+	display: block;
+	margin-bottom: 5px;
+}
+
 .sidebar h2 {
 	text-transform: uppercase;
 	font-weight: 700;
@@ -129,20 +135,19 @@ button {
 	border: none;
 	background-color: rgba(255,255,255,0.1);
 	border-radius: 3px;
-	padding: 5px 7px;
+	padding: 3px 5px;
+	margin: 2px;
+	display: block;
+	float: left;
 }
 
 button:hover {
 	background-color: rgba(255,255,255,0.2);
 }
 
-button svg {
-	width: 17px;
-	height: 17px;
-}
-
-button svg rect, button svg polygon {
-	fill: white;
+button img {
+	width: 22px;
+	height: 22px;
 }
 
 /**/
@@ -167,11 +172,15 @@ button svg rect, button svg polygon {
 	position: relative;
 }
 
-.canvas-wrapper.sun-fast {
+.canvas-wrapper.sun-slow {
 	transition: background-color 2s linear;
 }
 
-.canvas-wrapper.sun-slow {
+.canvas-wrapper.sun-med {
+	transition: background-color 4s linear;
+}
+
+.canvas-wrapper.sun-fast {
 	transition: background-color 6s linear;
 }
 
@@ -179,6 +188,41 @@ button svg rect, button svg polygon {
 	background-color: #CCD6D3;
 }
 
+.loading {
+	color: white;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 900;
+	background-color: rgba(0,0,0,0.7);
+	opacity: 1;
+	-webkit-transition: opacity 0.5s;
+  transition: opacity 0.5s
+}
+
+.loading .content {
+	bottom: 0; left: 0; top: 0; right: 0;
+  margin: auto;
+  position: absolute;
+  max-width: 300px;
+  height: 100px;
+  text-align: center;
+}
+
+.loading .content h2 {
+	margin-top: 15px;
+	font-style: italic;
+	/*text-transform: uppercase;*/
+	font-weight: 100;
+	font-size: 24px;
+}
+
+.loading.hidden {
+	opacity: 0;
+	pointer-events: none;
+}
 
 .canvas,
 .canvas-background {
@@ -256,4 +300,113 @@ ul.station-list {
 ul.station-list li {
 	font-weight: lighter;
 	text-transform: uppercase;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/* :not(:required) hides this rule from IE9 and below */
+.inner-circles-loader:not(:required) {
+  -moz-transform: translate3d(0, 0, 0);
+  -ms-transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 50%;
+  overflow: hidden;
+  text-indent: -9999px;
+  /* Hides inner circles outside base circle at safari */
+  -webkit-mask-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAA5JREFUeNpiYGBgAAgwAAAEAAGbA+oJAAAAAElFTkSuQmCC);
+}
+.inner-circles-loader:not(:required):before, .inner-circles-loader:not(:required):after {
+  content: '';
+  position: absolute;
+  top: 0;
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+}
+.inner-circles-loader:not(:required):before {
+  -moz-animation: inner-circles-loader 3s infinite;
+  -webkit-animation: inner-circles-loader 3s infinite;
+  animation: inner-circles-loader 3s infinite;
+  -moz-transform-origin: 0 50%;
+  -ms-transform-origin: 0 50%;
+  -webkit-transform-origin: 0 50%;
+  transform-origin: 0 50%;
+  left: 0;
+  background: rgba(255,255,255,0.3);
+}
+.inner-circles-loader:not(:required):after {
+  -moz-animation: inner-circles-loader 3s 0.2s reverse infinite;
+  -webkit-animation: inner-circles-loader 3s 0.2s reverse infinite;
+  animation: inner-circles-loader 3s 0.2s reverse infinite;
+  -moz-transform-origin: 100% 50%;
+  -ms-transform-origin: 100% 50%;
+  -webkit-transform-origin: 100% 50%;
+  transform-origin: 100% 50%;
+  right: 0;
+  background: rgba(255,255,255,0.3);
+}
+
+@-moz-keyframes inner-circles-loader {
+  0% {
+    -moz-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  50% {
+    -moz-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+  100% {
+    -moz-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+}
+@-webkit-keyframes inner-circles-loader {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  50% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+  100% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+}
+@keyframes inner-circles-loader {
+  0% {
+    -moz-transform: rotate(0deg);
+    -ms-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  50% {
+    -moz-transform: rotate(360deg);
+    -ms-transform: rotate(360deg);
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+  100% {
+    -moz-transform: rotate(0deg);
+    -ms-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
 }
