@@ -347,6 +347,11 @@
       return Stations;
 
       function getHoveredStation() {
+        // case: there's no hovered station, so instead return
+        // 
+        // if (_hoveredStation < 0) {
+
+        // }
         return _stations[_hoveredStation];
       }
 
@@ -547,6 +552,7 @@
               _ctx.beginPath();
               _ctx.arc(x, y, r + addedSize, 0, T);
               _ctx.fillStyle = _fillScale(_currentTime);
+              _ctx.lineWidth = 2;
               _ctx.fill();
               _ctx.stroke();
             }
@@ -752,14 +758,14 @@
 
           // Each fading bike has a different opacity which is some fraction of 0.15
           
-          _ctx.globalAlpha = Math.round(50 * bike.opacity * 0.15) / 50;
+          _ctx.globalAlpha = Math.round(50 * bike.opacity * 0.22) / 50;
           _ctx.beginPath();
 
           if (bike.sameStation) {
             _ctx.arc(_xScale.round(bike.start[0]), _yScale.round(bike.start[1]), 14*transforms.zoom, -bike.current[2], 0);
           } else {
-            _ctx.moveTo(_xScale.round(bike.start[0]), _yScale.round(bike.start[1]));
-            _ctx.lineTo(_xScale.round(bike.current[0]), _yScale.round(bike.current[1]));
+            // _ctx.moveTo(_xScale.round(bike.start[0]), _yScale.round(bike.start[1]));
+            // _ctx.lineTo(_xScale.round(bike.current[0]), _yScale.round(bike.current[1]));
           }
 
           _ctx.stroke();
@@ -769,36 +775,34 @@
         // _ctx.restore();
 
         // Active bikes always have opacity 0.15
-        _ctx.globalAlpha = 0.15;
+        _ctx.globalAlpha = 0.2;
+        _ctx.beginPath();
 
-        // Active bike lines, DIFFERENT station
+        // Active bike lines
         angular.forEach(_positionData.filter(function(bike) {
-          return bike.opacity === 1 && bike.sameStation;
+          return bike.opacity === 1;
         }), function(bike) {
-          _ctx.beginPath();
-          _ctx.arc(_xScale.round(bike.start[0]), _yScale.round(bike.start[1]), 14*transforms.zoom, -bike.current[2], 0);
-        });
 
-        // Active bike lines, SAME station
-        angular.forEach(_positionData.filter(function(bike) {
-          return bike.opacity === 1 && !bike.sameStation;
-        }), function(bike) {
-          _ctx.moveTo(_xScale.round(bike.start[0]), _yScale.round(bike.start[1]));
-          _ctx.lineTo(_xScale.round(bike.current[0]), _yScale.round(bike.current[1]));
+          if (bike.sameStation) {
+            _ctx.moveTo(_xScale.round(bike.start[0]), _yScale.round(bike.start[1]));
+            _ctx.arc(_xScale.round(bike.start[0]), _yScale.round(bike.start[1]), 14*transforms.zoom, -bike.current[2], 0);
+          } else {
+            _ctx.moveTo(_xScale.round(bike.start[0]), _yScale.round(bike.start[1]));
+            _ctx.lineTo(_xScale.round(bike.current[0]), _yScale.round(bike.current[1]));
+          } 
 
         });
-
-        _ctx.stroke();
+            _ctx.stroke();
         
-
+        
         // Draw active bikes
-        _ctx.globalAlpha = 0.75;
+        _ctx.globalAlpha = 1;
         angular.forEach(_positionData.filter(function(bike) {
           return bike.opacity > 0.95;
         }), function(bike) {
           _ctx.beginPath();
-          _ctx.arc(_xScale.round(bike.current[0]), _yScale.round(bike.current[1]), 3, 0, Math.PI * 2);
-          _ctx.fillStyle = "white";
+          _ctx.arc(_xScale.round(bike.current[0]), _yScale.round(bike.current[1]), 2, 0, Math.PI * 2);
+          _ctx.fillStyle = "#DDD";
           _ctx.fill();
         });
         
