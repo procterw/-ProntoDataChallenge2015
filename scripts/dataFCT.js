@@ -65,8 +65,8 @@
     ];
 
     Factory.query = {
-      month: 6,
-      subset: 5
+      month: {name: "July", val: 6},
+      subset: {name: "Fridays", val:5}
     };
 
     var loading;
@@ -100,8 +100,8 @@
     // Make a query using the internal QUERY object which is bound
     // To ui controls in the main view
     function makeQuery() {
-      var subset = Factory.query.subset;
-      var month = Factory.query.month;
+      var subset = Factory.query.subset.val;
+      var month = Factory.query.month.val;
       // If not a number it must be a weather option
       if (isNaN(subset)) {
         var monthFilter = Factory.trips.filter(function(d) {

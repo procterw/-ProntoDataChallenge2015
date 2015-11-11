@@ -412,8 +412,6 @@
         _currentTime = time;
       }
 
-      // Takes a dataset and updates internal bike tracking
-      // Based on 
       function removeBikes(data) {
         angular.forEach(data, function(d) {
           _stations.forEach(function(s) {
@@ -422,21 +420,21 @@
               s.departures.push({
                 age: d.age,
                 usertype: d.usertype,
-                time: _currentTime
+                time: d.starttime_min
               })
             }
           });
         });
       }
 
-      function addBike(terminal,usertype,age) {
+      function addBike(terminal,usertype,age,time) {
         _stations.forEach(function(s) {
           if (s.terminal === terminal) {
             s.bikeCount++;
             s.arrivals.push({
               age: age,
               usertype: usertype,
-              time: _currentTime
+              time: time
             })
           }
         });
@@ -653,7 +651,7 @@
         angular.forEach(_rawData, function(d) {
           if (!d.finished && d.stoptime_min < _currentTime) {
             d.finished = true;
-            Factory.Stations.addBike(d.to_station_id, d.usertype, d.age);
+            Factory.Stations.addBike(d.to_station_id, d.usertype, d.age, d.stoptime_min);
           }
         });
 
@@ -898,7 +896,7 @@
 
       function render(selection) {
 
-        var scalar = selection ? 12 : 1;
+        var scalar = selection ? 14 : 1;
 
         if (selection === "all" || !selection) {
 
