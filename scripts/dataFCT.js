@@ -173,11 +173,14 @@
         return d.terminal;
       });
 
+      // Minutes since 1970 of first trip
+      var firstTrip = 23553211;
+
       angular.forEach(data, function(d) {
         d.to_station_id = stationList[+d.to_station_id - 1];
         d.from_station_id = stationList[+d.from_station_id - 1];
-        d.starttime = new Date((+d.starttime) * 60 * 1000 + timeShift);
-        d.stoptime = new Date((+d.stoptime) * 60 * 1000 + timeShift);
+        d.starttime = new Date((+d.starttime + firstTrip) * 60 * 1000 + timeShift);
+        d.stoptime = new Date((+d.stoptime + firstTrip) * 60 * 1000 + timeShift);
         var age = new Date().getFullYear() - +d.birthyear;
         d.age = age < 35 ? "young" : (age > 34 ? "old" : null);
         delete d.birthyear;

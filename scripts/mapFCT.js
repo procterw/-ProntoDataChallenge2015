@@ -72,7 +72,6 @@
 
       // Round values to the nearest 1/2
       xScale.round = function(x) {
-        if (retina < 2) return x;
         return Math.round(this(x) * retina) / retina;
       }
 
@@ -85,7 +84,6 @@
 
       // Round values to the nearest 1/2
       yScale.round = function(y) {
-        if (retina < 2) return x;
         return Math.round(this(y) * retina) / retina;
       }
 
@@ -767,8 +765,8 @@
           if (bike.sameStation) {
             _ctx.arc(_xScale.round(bike.start[0]), _yScale.round(bike.start[1]), 14*transforms.zoom, -bike.current[2], 0);
           } else {
-            // _ctx.moveTo(_xScale.round(bike.start[0]), _yScale.round(bike.start[1]));
-            // _ctx.lineTo(_xScale.round(bike.current[0]), _yScale.round(bike.current[1]));
+            _ctx.moveTo(_xScale.round(bike.start[0]), _yScale.round(bike.start[1]));
+            _ctx.lineTo(_xScale.round(bike.current[0]), _yScale.round(bike.current[1]));
           }
 
           _ctx.stroke();
@@ -805,7 +803,7 @@
         }), function(bike) {
           _ctx.beginPath();
           _ctx.arc(_xScale.round(bike.current[0]), _yScale.round(bike.current[1]), 2, 0, Math.PI * 2);
-          _ctx.fillStyle = "#DDD";
+          _ctx.fillStyle = "#FFF";
           _ctx.fill();
         });
 

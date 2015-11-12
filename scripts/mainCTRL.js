@@ -37,6 +37,10 @@
     vm.monthOptions = DataFactory.monthOptions;
     vm.query = DataFactory.query;
 
+    vm.shortTermSelected = function() {
+      console.log("DAMNIT")
+    }
+
     vm.previous = {
       day: "",
       month: "" 

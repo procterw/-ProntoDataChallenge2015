@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta charset="utf-8">
-<title></title>
+<title>Pronto Data Challenge | Will Leahy</title>
 <meta name="description" content="Pronto BikeShare Challenge">
 <meta name="author" content="Will Leahy">
 
@@ -118,7 +118,7 @@
 
 		<div class="row header">
 
-			<h1>Pronto Data Challenge</h1>
+			<h1>Pronto Bikeshare Data Challenge</h1>
 			<h3>Will Leahy, 2015</h3>
 
 		</div>
@@ -164,7 +164,7 @@
 					<span class="filter-label">Annual</span>
 				</label>
 				<label>
-					<input type="radio" ng-model="main.userType" value="O">
+					<input type="radio" ng-model="main.userType" value="O" ng-change="main.shortTermSelected()">
 					<span class="filter-label">Short Term</span>
 				</label>
 
@@ -200,6 +200,19 @@
 	<script src="scripts/mainCTRL.js"></script>
 
 	
+  <script type="text/javascript">
+
+	  var _gaq = _gaq || [];
+	  _gaq.push(['_setAccount', 'UA-46751219-1']);
+	  _gaq.push(['_trackPageview']);
+
+	  (function() {
+	    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+	    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	  })();
+
+	</script>
 
 </body>
 </html>

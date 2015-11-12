@@ -79,6 +79,10 @@ h2, h3 {
 	/*box-shadow: 0 0 5px 1px rgba(0,0,0,0.1);*/
 }
 
+.sidebar-mobile {
+	display: none;
+}
+
 .row {
 	width: 100%;
 	display: block;
@@ -127,13 +131,13 @@ h2, h3 {
 	border-top: 1px dotted white;
   display: inline-block;
   padding: 10px 0;
-  font-weight: 100;
+  font-weight: 300;
   font-style: italic;
   letter-spacing: 0.5px;
 }
 
 .sidebar p {
-	font-weight: 100;
+	font-weight: 300;
 	font-style: italic;
 	line-height: 24px;
 }
@@ -379,9 +383,53 @@ ul.station-list li {
 
 
 
+@media (max-width: 650px) {
+
+	.sidebar {
+		display: none;
+	}
+
+	.canvas-cover {
+		margin-left: 0;
+	}
+
+  .animation-controls {
+		/*position: absolute;*/
+		/*z-index: 800;*/
+		display: block;
+		/*text-align: center;*/
+		left: auto;
+	}
+
+	.control-block {
+		display: block;
+		/*margin: 10px;*/
+	}
+
+	button {
+		display: block;
+	}
+
+}
+
+/*slim fonts only look good on retina*/
+@media 
+(-webkit-min-device-pixel-ratio: 2), 
+(min-resolution: 192dpi) { 
+  .sidebar h3 {
+	  font-weight: 100;
+	}
+
+	.sidebar p {
+		font-weight: 100;
+	}
+
+}
 
 
-
+/*LOADING TRANSITION*/
+/*This is a modified version of the inner-circle-loader from www.css-spinners.com
+/*by John W. Long and Alexander Kohlhofer. All credit goes to them
 
 /* :not(:required) hides this rule from IE9 and below */
 .inner-circles-loader:not(:required) {
