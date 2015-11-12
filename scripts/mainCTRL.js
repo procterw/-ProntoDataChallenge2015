@@ -15,7 +15,6 @@
 
 	function Main($scope, DataFactory, MapFactory, $http) {
 
-
 		var vm = this;
 
     // Default options
@@ -24,6 +23,10 @@
     vm.timeRange = [new Date(2014, 10, 16), new Date(2014, 10, 18)];
     vm.currentTime = 0;
     vm.minpersec = 20;
+
+    vm.mobileOverlay = {
+      visible: false
+    }
 
     vm.loading = true;
 

@@ -65,6 +65,7 @@ h2, h3 {
 /**/
 /**/
 
+/*only visible on larger screens*/
 .sidebar {
 	box-sizing: border-box;
 	position: fixed;
@@ -79,8 +80,15 @@ h2, h3 {
 	/*box-shadow: 0 0 5px 1px rgba(0,0,0,0.1);*/
 }
 
+/*only visible on smaller screens*/
 .sidebar-mobile {
+	width: 100%;
 	display: none;
+}
+
+.content-scroll {
+	height: 100%;
+	overflow-y: scroll;
 }
 
 .row {
@@ -216,6 +224,15 @@ button img {
 
 button.active {
 	background-color: rgba(0,0,0,0.7);
+}
+
+/*only visible on mobile*/
+button.menu {
+	display: none;
+}
+
+button.close {
+	float:right;
 }
 
 /**/
@@ -389,8 +406,37 @@ ul.station-list li {
 		display: none;
 	}
 
+	.sidebar-mobile {
+		display: block;
+		background-color: rgba(0,0,0,0.7);
+		z-index: 1000;
+	}
+
+	.wrap-dd-select {
+		width: 90%;
+		margin-bottom: 10px;
+	}
+
 	.canvas-cover {
 		margin-left: 0;
+	}
+
+	.filter-group {
+		margin-bottom: 10px;
+	}
+
+	.filter-label {
+		/*text-transform: uppercase;*/
+		box-sizing: border-box;
+		background-color: rgba(255,255,255,0.1);
+		padding: 8px;
+		text-align: center;
+		font-size: 13px;
+		width: 96%;
+		display: block;
+		float: left;
+		margin: 2px;
+		border-radius: 3px;
 	}
 
   .animation-controls {
@@ -403,10 +449,15 @@ ul.station-list li {
 
 	.control-block {
 		display: block;
+		margin-bottom: 15px;
 		/*margin: 10px;*/
 	}
 
 	button {
+		display: block;
+	}
+
+	button.menu {
 		display: block;
 	}
 

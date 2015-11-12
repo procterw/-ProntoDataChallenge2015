@@ -13,8 +13,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/dropdown.css">
+<link rel="stylesheet" href="css/style.css">
+
 
 <!--[if lt IE 9]>
 <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.2/html5shiv.min.js"></script>
@@ -50,6 +51,15 @@
 		</div>
 
 		<div class="animation-controls no-click">
+
+				<div class="control-block">
+
+					<button class="menu" ng-click="main.mobileOverlay.visible=true">
+						<!-- starts playing from time 0 -->
+						<img src="images/menu.svg" />
+					</button>
+
+				</div>
 
 				<div class="control-block">
 
@@ -149,6 +159,9 @@
     	
 		</div>
 
+
+
+
 		<div class="row">
 
 			<h2>Filters</h2>
@@ -188,6 +201,89 @@
 			</div>
 
 		</div>
+
+	</div>
+
+	<div class="sidebar sidebar-mobile" ng-show="main.mobileOverlay.visible">
+
+		<div class="content-scroll">
+
+
+		<button class="close" ng-click="main.mobileOverlay.visible=false">
+			<img src="images/close.svg" />
+		</button>
+
+		
+		<div class="row">
+
+			<!-- <h2>Query</h2> -->
+
+			<div dropdown-select="main.subsetOptions"
+        dropdown-model="main.query.subset"
+        dropdown-item-label="name" >
+    	</div>
+
+			<div dropdown-select="main.monthOptions"
+        dropdown-model="main.query.month"
+        dropdown-item-label="name" >
+    	</div>
+    	
+		</div>
+
+
+		<div class="row">
+
+			<h2>Filters</h2>
+
+			<div class="filter-group">
+
+				<label>
+					<input type="radio" ng-model="main.userType" value="AO">
+					<span class="filter-label">All Users</span>
+				</label>
+			    <label>
+					<input type="radio" ng-model="main.userType" value="A">
+					<span class="filter-label">Annual</span>
+				</label>
+				<label>
+					<input type="radio" ng-model="main.userType" value="O" ng-change="main.shortTermSelected()">
+					<span class="filter-label">Short Term</span>
+				</label>
+
+			</div>
+
+		</div>
+
+		<div class="row">
+
+			<div class="filter-group">
+
+				<label>
+					<input type="radio" ng-model="main.userAge" value="all">
+					<span class="filter-label">All Ages</span>
+				</label>
+			    <label>
+					<input type="radio" ng-model="main.userAge" value="old">
+					<span class="filter-label">Under 35</span>
+				</label>
+				<label>
+					<input type="radio" ng-model="main.userAge" value="young">
+					<span class="filter-label">Over 35</span>
+				</label>
+
+			</div>
+
+		</div>
+
+		<div class="row">
+
+			<p>This visualization animates weekday trends for months between October 2014 and October 2015. It was built by Will Leahy for the 2015 Pronto Data Challenge.</p>
+
+			<p>Bike arrivals at shown in <span class="key blue">blue</span> and bike departures are shown in <span class="key red">red</span>.</p>
+
+		</div>
+
+	</div>
 
 	</div>
 
