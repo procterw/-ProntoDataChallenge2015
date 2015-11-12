@@ -66,12 +66,13 @@ h2, h3 {
 /**/
 
 .sidebar {
+	box-sizing: border-box;
 	position: fixed;
 	left: 0;
 	top: 0;
 	bottom: 0;
-	padding: 10px;
-	width: 300px;
+	padding: 10px 15px;
+	width: 330px;
 	color: white;
 	z-index: 500;
 	background-color: rgba(0,0,0,0.3);
@@ -134,6 +135,7 @@ h2, h3 {
 .sidebar p {
 	font-weight: 100;
 	font-style: italic;
+	line-height: 24px;
 }
 
 /*filtering */
@@ -158,6 +160,18 @@ h2, h3 {
 
 .filter-label:hover {
 	background-color: rgba(255,255,255,0.2);
+}
+
+span.key {
+	padding: 0 4px;
+}
+
+span.key.blue {
+	background-color: #88B5BF;
+}
+
+span.key.red {
+	background-color: #D37363;
 }
 
 input[type=radio] {
@@ -216,26 +230,9 @@ button.active {
 }
 
 .canvas-wrapper {
-	background-color: #585F60;
 	height: 100%;
 	margin: 0;
 	position: relative;
-}
-
-.canvas-wrapper.sun-slow {
-	transition: background-color 2s linear;
-}
-
-.canvas-wrapper.sun-med {
-	transition: background-color 4s linear;
-}
-
-.canvas-wrapper.sun-fast {
-	transition: background-color 6s linear;
-}
-
-.canvas-wrapper.day {
-	background-color: #CCD6D3;
 }
 
 .loading {
@@ -303,7 +300,7 @@ button.active {
 	right: 0;
 	bottom: 0;
 	z-index: 100;
-	margin-left: 320px;
+	margin-left: 331px;
 	
 	/*padding: 10px;*/
 	/*margin: 10px;*/

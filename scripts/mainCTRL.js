@@ -66,8 +66,8 @@
       resize();
 
       setTimeout(function() {
-        vm.loading = false
-        $scope.$apply()
+        vm.loading = false;
+        $scope.$apply();
       }, 100);
 
     };
@@ -165,19 +165,6 @@
         if (vm.currentTime > vm.timeStop) vm.currentTime = vm.timeStop;
 
         $scope.$apply();
-
-        // Get the new time of day
-        if (vm.currentTime < sunriset[1] - 60 || vm.currentTime > sunriset[0] - 60) {
-          newTimeOfDay = "night";
-        } else {
-          newTimeOfDay = "day";
-        }
-
-        sunclass = vm.minpersec === 10 ? "sun-fast" : (vm.minpersec === 20 ? "sun-med" : "sun-slow");
-
-        if (newTimeOfDay !== timeOfDay && newTimeOfDay === "night") water.attr("class", "canvas-wrapper " + sunclass);
-        if (newTimeOfDay !== timeOfDay && newTimeOfDay === "day") water.attr("class", "canvas-wrapper day " + sunclass);
-        if (newTimeOfDay !== timeOfDay) timeOfDay = newTimeOfDay;
 
         // Remove day from the original subset
         activeBikes = DataFactory.findTripStations(DataFactory.getDataBefore(dataSubset, vm.currentTime, true));

@@ -208,6 +208,7 @@
         // sunriset, night color, day color
         _fillScale = makeSunScale(sunriset, "#544A45", "#E0D7CE");
         _strokeScale = makeSunScale(sunriset, "#5B5552", "#F7F7F7");
+        _waterScale = makeSunScale(sunriset, "#585F60", "#CCD6D3");
       }
 
       function setTime(time) {
@@ -255,6 +256,9 @@
         // _ctx.save();
         // _ctx.translate(transforms.translation[0], transforms.translation[1]);
         // _ctx.scale(transforms.zoom * _retina, transforms.zoom * _retina);
+
+        _ctx.fillStyle = _waterScale(_currentTime % (24 * 60));
+        _ctx.fillRect(0,0,_width,_height);
 
         // Apply style attributes and draw polygons
         _ctx.fillStyle = _fillScale(_currentTime % (24 * 60));
@@ -521,6 +525,12 @@
 
           var station = _stations[i];
 
+          // Canvas xy coordinates for rendering
+          var x = _xScale.round(+station.long);
+          var y = _yScale.round(+station.lat);
+
+          
+
           var arrivals = station.arrivals.filter(function(d) {
             var user = _userFilter === "AO" || d.usertype === _userFilter;
             var age = _ageFilter === "all" || d.age === _ageFilter;
@@ -533,29 +543,14 @@
             return user && age;
           }).length;
 
-          // Canvas xy coordinates for rendering
-          var x = _xScale.round(+station.long);
-          var y = _yScale.round(+station.lat);
+          
 
           // Initial plot
           if (!_plotType) {
-            _ctx.beginPath();
-            _ctx.arc(x, y, r + addedSize, 0, T);
-            _ctx.fillStyle = _fillScale(_currentTime);
-            _ctx.fill();
-            _ctx.stroke();
+            drawblank(x,y,5)
           }
 
           if (_plotType === "usage") {
-
-            function drawblank() {
-              _ctx.beginPath();
-              _ctx.arc(x, y, r + addedSize, 0, T);
-              _ctx.fillStyle = _fillScale(_currentTime);
-              _ctx.lineWidth = 2;
-              _ctx.fill();
-              _ctx.stroke();
-            }
 
             var r = 5;
 
@@ -568,36 +563,44 @@
             var nrowArrivals = Math.floor(arrivals / rowLength);
             var nrowDepartures = Math.floor(departures / rowLength);
             var remainderArrivals = arrivals % rowLength;
-            var remainderDepartures = departures % rowLength;
+            var remainderDepartures = departures % rowLength;   
 
-            function drawArrivals() {
-              _ctx.fillStyle = blue;
-              // draw big row
-              if (nrowArrivals > 0) {
-                _ctx.fillRect(x - (rowLength/2*sqSide), y, rowLength*sqSide, -(nrowArrivals)*sqSide);
-              }
-              if (remainderArrivals > 0) {
-                _ctx.fillRect(x - (rowLength/2*sqSide), y - (nrowArrivals)*sqSide, remainderArrivals*sqSide, -sqSide);
-              }
-            }
-
-            function drawDepartures() {
-              _ctx.fillStyle = red;
-              // draw big row
-              if (nrowDepartures > 0) {
-                _ctx.fillRect(x - (rowLength/2*sqSide), y, rowLength*sqSide, (nrowDepartures)*sqSide);
-              }
-              if (remainderDepartures > 0) {
-                _ctx.fillRect(x - (rowLength/2*sqSide), y + (nrowDepartures)*sqSide, remainderDepartures*sqSide,sqSide);
-              }
-            }
-
-            drawArrivals()
-            drawDepartures()
+            drawArrivals(rowLength,sqSide,nrowArrivals,nrowDepartures,remainderArrivals,remainderDepartures);
+            drawDepartures(rowLength,sqSide,nrowArrivals,nrowDepartures,remainderArrivals,remainderDepartures);
             drawblank(x,y,r)
 
           }
+        }
 
+        function drawblank(x,y,r) {
+          _ctx.beginPath();
+          _ctx.arc(x, y, r + addedSize, 0, T);
+          _ctx.fillStyle = _fillScale(_currentTime);
+          _ctx.lineWidth = 2;
+          _ctx.fill();
+          _ctx.stroke();
+        }
+
+        function drawArrivals(rowLength,sqSide,nrowArrivals,nrowDepartures,remainderArrivals,remainderDepartures) {
+          _ctx.fillStyle = blue;
+          // draw big row
+          if (nrowArrivals > 0) {
+            _ctx.fillRect(x - (rowLength/2*sqSide), y, rowLength*sqSide, -(nrowArrivals)*sqSide);
+          }
+          if (remainderArrivals > 0) {
+            _ctx.fillRect(x - (rowLength/2*sqSide), y - (nrowArrivals)*sqSide, remainderArrivals*sqSide, -sqSide);
+          }
+        }
+
+        function drawDepartures(rowLength,sqSide,nrowArrivals,nrowDepartures,remainderArrivals,remainderDepartures) {
+          _ctx.fillStyle = red;
+          // draw big row
+          if (nrowDepartures > 0) {
+            _ctx.fillRect(x - (rowLength/2*sqSide), y, rowLength*sqSide, (nrowDepartures)*sqSide);
+          }
+          if (remainderDepartures > 0) {
+            _ctx.fillRect(x - (rowLength/2*sqSide), y + (nrowDepartures)*sqSide, remainderDepartures*sqSide,sqSide);
+          }
         }
 
       }
