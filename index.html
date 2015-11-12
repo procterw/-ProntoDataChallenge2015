@@ -49,15 +49,54 @@
 
 		</div>
 
-		<div class="canvas-cover">
+		<div class="animation-controls no-click">
 
-			<!-- <h3 class="time">{{main.formatTime(main.currentTime)}}</h3> -->
+				<div class="control-block">
 
-	<!-- 		<div class="cover-block wd-3" ng-hide="!main.hoveredStation()">
-				<timeseries ng-transclude></timeseries>
-			</div> -->
+					<button ng-click="main.start()" ng-show="main.showPlayButton()">
+						<!-- starts playing from time 0 -->
+						<img src="images/play.svg" />
+					</button
 
-			<div class="cover-block wd-3" ng-hide="!main.hoveredStation()">
+					><button ng-click="main.pause()" ng-show="main.showUnpauseButton()">
+					<!-- unpause -->
+						<img src="images/play.svg" />
+					</button
+
+					><button ng-click="main.pause()" ng-show="main.showPauseButton()"> 
+					<!-- pause -->
+						<img src="images/pause.svg" />
+					</button
+
+					><button ng-click="main.start()"> 
+					<!-- resets the time to 0 -->
+						<img src="images/replay.svg" />
+					</button>
+
+				</div>
+
+				<div class="control-block">
+
+					<span><button ng-click="main.minpersec=10" ng-class="{active:main.minpersec===10}">
+						<img src="images/speed1.svg" />
+					</button
+
+					></span><button ng-click="main.minpersec=20" ng-class="{active:main.minpersec===20}">
+						<img src="images/speed2.svg" />
+					</button
+
+					><button ng-click="main.minpersec=45" ng-class="{active:main.minpersec===45}">
+						<img src="images/speed3.svg" />
+					</button>
+
+				</div>
+
+			</div>
+
+
+		<div class="canvas-cover no-click">
+
+			<div class="cover-block wd-3 no-click" ng-hide="!main.hoveredStation()">
 				<h4>{{main.hoveredStation().name}}</h4>
 				<ul class="station-list" >
 				<li>Departures <b>{{main.hoveredStation().departures.length}}</b></li>
@@ -84,21 +123,13 @@
 
 		</div>
 
- 		<div class="row header">
 
-			<button ng-click="main.start()" ng-hide="vm.animationRunning()">
-				<img src="images/play.svg" />
-			</button>
+		<div class="row">
 
-			<button ng-click="main.pause()" ng-hide="vm.animationRunning()">
-				<img src="images/pause.svg" />
-			</button>
-
-			<button ng-click="main.pause()" ng-hide="">
-				<img src="images/replay.svg" />
-			</button>
+			<p>This visualization animates weekday trends for months between October 2014 and October 2015.</p>
 
 		</div>
+
 
 		<div class="row">
 
@@ -115,26 +146,6 @@
     	</div>
     	
 		</div>
-
-		<div class="row">
-
-			<h2>Playback Speed</h2>
-
-			<label>
-				<input type="radio" ng-model="main.minpersec" value="10">
-				<span class="filter-label">></span>
-			</label>
-		    <label>
-				<input type="radio" ng-model="main.minpersec" value="20">
-				<span class="filter-label">>></span>
-			</label>
-			<label>
-				<input type="radio" ng-model="main.minpersec" value="45">
-				<span class="filter-label">>>></span>
-			</label>
-
-		</div>
-
 
 		<div class="row">
 
@@ -175,7 +186,6 @@
 			</div>
 
 		</div>
-
 
 	</div>
 

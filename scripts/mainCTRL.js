@@ -95,7 +95,7 @@
 
     var Trends = new function() {
 
-      var animationFrame = false;
+      var runningAnimation = false;
 
       // Queried subset of trip data
       var dataSubset = [];
@@ -208,6 +208,7 @@
         if (vm.currentTime < vm.timeStop) {
           runningAnimation = window.requestAnimationFrame(run);
         } else {
+          runningAnimation = false;
           MapFactory.Bikes.reset();
         }
 
@@ -239,8 +240,17 @@
     vm.start = Trends.initialize;
     vm.pause = Trends.pause;
 
-    vm.animationRunning = Trends.isRunning;
+    vm.showPlayButton = function() {
+      return !Trends.isRunning() && (vm.currentTime === 0 || vm.currentTime >= 60*24);
+    }
 
+    vm.showUnpauseButton = function() {
+      return !Trends.isRunning() && (vm.currentTime > 0 && vm.currentTime < 60*24);
+    }
+
+    vm.showPauseButton = function() {
+      return Trends.isRunning();
+    }
 
     $scope.$watch(function() { return [vm.userType, vm.userAge]; }, function() {
       // if (!runningAnimation) {

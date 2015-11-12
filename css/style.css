@@ -100,6 +100,8 @@ h2, h3 {
 
 .header {
 	text-align: center;
+	border-top: 1px dotted white;
+	border-bottom: 1px dotted white;
 }
 
 .sidebar h1 {
@@ -121,12 +123,17 @@ h2, h3 {
 }
 
 .sidebar h3 {
-    display: inline-block;
-    padding-bottom: 7px;
-    border-bottom: 1px dotted white;
-    font-weight: 100;
-    font-style: italic;
-    letter-spacing: 0.5px;
+	border-top: 1px dotted white;
+  display: inline-block;
+  padding: 10px 0;
+  font-weight: 100;
+  font-style: italic;
+  letter-spacing: 0.5px;
+}
+
+.sidebar p {
+	font-weight: 100;
+	font-style: italic;
 }
 
 /*filtering */
@@ -172,21 +179,25 @@ input[type="radio"]:checked + span:hover {
 
 button {
 	border: none;
-	background-color: rgba(255,255,255,0.1);
-	border-radius: 3px;
+	background-color: rgba(0,0,0,0.3);
+	border-radius: 20px;
 	padding: 3px 5px;
-	margin: -1px;
-	margin-top: 10px;
+	margin: 2px;
 	display: inline-block;
 }
 
 button:hover {
-	background-color: rgba(255,255,255,0.2);
+	background-color: rgba(0,0,0,0.5);
+	/*background-color: rgba(0,0,0,0.7);*/
 }
 
 button img {
-	width: 32px;
-	height: 32px;
+	width: 28px;
+	height: 28px;
+}
+
+button.active {
+	background-color: rgba(0,0,0,0.7);
 }
 
 /**/
@@ -285,7 +296,7 @@ button img {
 /**/
 
 .canvas-cover {
-	pointer-events: none;
+	
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -297,6 +308,10 @@ button img {
 	/*padding: 10px;*/
 	/*margin: 10px;*/
 	
+}
+
+.no-click {
+	pointer-events: none;
 }
 
 .cover-block {
@@ -345,6 +360,25 @@ ul.station-list li {
 
 
 
+
+.animation-controls {
+	position: absolute;
+	z-index: 800;
+	display: inline-block;
+	text-align: center;
+	top:0;
+	left:300px;
+	right:0;
+}
+
+.control-block {
+	display: inline-block;
+	margin: 10px;
+}
+
+.control-block button {
+	pointer-events: all;
+}
 
 
 

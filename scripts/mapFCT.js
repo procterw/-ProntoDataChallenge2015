@@ -409,7 +409,7 @@
 
       function setColorScale(sunriset) {
         // sunriset, night color, day color
-        _fillScale = makeSunScale(sunriset, "#777", "#FFF");
+        _fillScale = makeSunScale(sunriset, "#999", "#FFF");
         _strokeScale = makeSunScale(sunriset, "#4C4440", "#E2DCD5");
       }
 
@@ -792,8 +792,8 @@
           } 
 
         });
-            _ctx.stroke();
-        
+    
+        _ctx.stroke();    
         
         // Draw active bikes
         _ctx.globalAlpha = 1;
@@ -805,7 +805,6 @@
           _ctx.fillStyle = "#DDD";
           _ctx.fill();
         });
-        
 
         // _ctx.restore();
 
@@ -978,6 +977,9 @@
           if (d1) _ctx.fillRect(0,_xScale(d1.x),Math.min(d1.y,d2.y)*scalar,4);
         }
 
+        _ctx.fillStyle = "rgba(0,0,0,0.3)";
+        _ctx.fillRect(45,_xScale(_currentTime)-12,70,22);
+
         _ctx.fillStyle = "white";
         // _ctx.font = "18px Work Sans";
         
@@ -992,6 +994,8 @@
         _ctx.fillText(time[0],50,_xScale(_currentTime)+3);
         _ctx.fillText(time[1],90,_xScale(_currentTime)+3);
 
+        
+
 
       }
 
@@ -1003,20 +1007,20 @@
 
   function formatTime(time) {
 
-          if (!time) return "04:00,AM";
+    if (!time) return "04:00,AM";
 
-          var hours = (Math.floor(time / 60) + 4);
-          var minutes = Math.round(time % 60);
+    var hours = (Math.floor(time / 60) + 4);
+    var minutes = Math.round(time % 60);
 
-          var ampm = hours < 12 || hours > 23 ? "AM" : "PM";
-          hours = hours % 12;
-          if (hours === 0) hours = 12;
+    var ampm = hours < 12 || hours > 23 ? "AM" : "PM";
+    hours = hours % 12;
+    if (hours === 0) hours = 12;
 
-          if (hours < 10) hours = "0" + hours;
-          if (minutes < 10) minutes = "0" + minutes;
-          return hours + ":" + minutes + "," + ampm;
+    if (hours < 10) hours = "0" + hours;
+    if (minutes < 10) minutes = "0" + minutes;
+    return hours + ":" + minutes + "," + ampm;
 
-        }
+  }
 
 
 })();
